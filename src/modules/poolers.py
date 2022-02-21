@@ -13,7 +13,7 @@ class T5Pooler(nn.Module):
         self.dense = nn.Linear(config.encoder_size, config.pooler_size)
         self.activation = activation
 
-    def forward(self, hidden_states):
+    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
         mean_tensor = torch.mean(hidden_states, dim=1)
         pooled_output = self.dense(mean_tensor)
         pooled_output = self.activation(pooled_output)
