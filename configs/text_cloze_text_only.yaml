@@ -1,3 +1,12 @@
+trainer:
+  save_dir: "models/"
+  epochs: 10
+  learning_rate: 0.01
+  optimizer:
+    name: "adam"
+    parameters:
+      beta: 0.5
+
 dataset:
   path: "dataset/COMICS_ocr_lines.txt"
 

@@ -3,8 +3,8 @@ import torch
 
 from transformers import T5Tokenizer
 
-from configuration import get_configuration
-from models.text_cloze_model import TextClozeTextOnlyModel
+from src.configuration import get_configuration
+from src.models.text_cloze_model import TextClozeTextOnlyModel
 
 
 def parse_args() -> argparse.Namespace:
@@ -24,9 +24,9 @@ def main(args) -> None:
     tokenizer = T5Tokenizer.from_pretrained("t5-small")
     model = TextClozeTextOnlyModel(config.model)
 
-    import torch.nn.functional as F
     input_ids = tokenizer("Hello", return_tensors="pt").input_ids
-    answers_ids = tokenizer(["World War", "Cold"], return_tensors="pt", max_length=config.model.answer_max_tokens, padding="max_length").input_ids
+    answers_ids = tokenizer(["World War", "Cold"], return_tensors="pt",
+                            max_length=config.model.answer_max_tokens, padding="max_length").input_ids
     targets = torch.tensor([[1.0, 0.0]])
     outputs = model(input_ids, answers_ids, targets)
     pass

@@ -1,26 +1,28 @@
 import torch
+from typing import Any
 from torch import nn
 from transformers.modeling_outputs import MultipleChoiceModelOutput
 
-from .base_model import BaseT5EncoderModel
+from src.modules.encoders import BaseT5EncoderModule
 
 
 class TextClozeTextOnlyModel(nn.Module):
 
-    def __init__(self, config: object) -> None:
+    def __init__(self, config: Any) -> None:
         super(TextClozeTextOnlyModel, self).__init__()
         self.num_labels = config.answer_size
+        self.loss_function = nn.CrossEntropyLoss()
+
         self.answers_embedding = nn.Embedding(
             config.num_tokens, config.answer_embed_size)
-        self.t5_encoder = BaseT5EncoderModel(config)
+        self.t5_encoder = BaseT5EncoderModule(config)
         self.scores_fc = nn.Linear(
             config.answer_embed_size * config.answer_size *
             config.answer_max_tokens + config.pooler_size,
             config.answer_size
         )
-        self.scores_fc_activation = nn.LeakyReLU()
 
-    def forward(self, token_ids, answers, targets):
+    def forward(self, token_ids, answers, targets) -> MultipleChoiceModelOutput:
         outputs = self.t5_encoder(token_ids, answers)
         answer_embedding_outputs = self.answers_embedding(
             answers.view(answers.size(0), -1))
@@ -30,13 +32,11 @@ class TextClozeTextOnlyModel(nn.Module):
         loss = None
 
         if targets is not None:
-            loss_fct = nn.CrossEntropyLoss()
-            loss = loss_fct(logits, targets)
+            loss = self.loss_function(logits, targets)
 
-        # TODO: Hidden states
         return MultipleChoiceModelOutput(
             loss=loss,
             logits=logits,
-            hidden_states=outputs.hidden_states,
-            attentions=outputs.attentions,
+            # hidden_states=outputs.hidden_states,
+            # attentions=outputs.attentions,
         )
