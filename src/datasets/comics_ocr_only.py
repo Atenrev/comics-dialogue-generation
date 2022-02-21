@@ -60,14 +60,14 @@ class ComicsOcrOnlyDataset(Dataset[Any]):
         }
 
 
-def create_dataloader(config: Any, tokenizer: PreTrainedTokenizer) -> DataLoader[Any]:
+def create_dataloader(tokenizer: PreTrainedTokenizer, batch_size: int) -> DataLoader[Any]:
     data = pd.read_csv(DATASET_PATH, ',')
     data = data.dropna()
     data = data["text"].to_numpy()
 
     return DataLoader(
         dataset=ComicsOcrOnlyDataset(data, tokenizer),
-        batch_size=config.batch_size,
+        batch_size=batch_size,
         shuffle=False,
         num_workers=0,
     )

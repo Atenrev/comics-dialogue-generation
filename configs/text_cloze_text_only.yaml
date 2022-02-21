@@ -1,5 +1,6 @@
 trainer:
   epochs: 10
+  batch_size: 4
   save_dir: "models/"
 
 optimizer:
@@ -10,18 +11,18 @@ optimizer:
 
 dataset:
   name: "comics_ocr_only"
-  batch_size: 4
+  
 
 model:
   classname: "TextClozeTextOnlyModel"
+
   num_tokens: 32100
+  encoder_size: 512
+  pooler_size: 128
 
   max_context_lines: 5
   max_context_size: 100
 
-  encoder_size: 512
-  pooler_size: 128
-
-  answer_embed_size: 128
   answer_lines: 3
+  answer_embed_size: 128
   answer_max_tokens: 8

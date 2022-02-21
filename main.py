@@ -58,13 +58,12 @@ def main(args) -> None:
         print("INFO: Loaded checkpoint. Epoch:",
               checkpoint["epoch"], "Loss:", checkpoint["loss"])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        init_epoch = checkpoint['epoch']
 
     # DataLoaders
     create_dataloader = getattr(importlib.import_module(
         f"src.datasets.{config.dataset.name}"), "create_dataloader")
-    train_dataloader = create_dataloader(config.dataset, tokenizer)
-    # TODO: Split dataset, pre-slice in chunks of context+answer+prediction lines
+    train_dataloader = create_dataloader(tokenizer, config.trainer.batch_size)
+    # TODO: Split dataset, so pre-slice in chunks of context+answer+prediction lines 
 
     # Trainer
     trainer = Trainer(model, train_dataloader, None,
