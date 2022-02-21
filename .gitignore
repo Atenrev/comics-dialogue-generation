@@ -103,5 +103,5 @@ ENV/
 # other
 .vscode
 data/
-.slurm
+comics.slurm
 dataset/
