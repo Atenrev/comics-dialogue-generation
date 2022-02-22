@@ -3,14 +3,14 @@ trainer:
   batch_size: 4
   save_dir: "models/"
 
-optimizer:
-  type: "adam"
-  params:
-    lr: 0.01
-    beta: 0.5
+  optimizer:
+    type: "adam"
+    params:
+      lr: 0.01
+      beta: 0.5
 
-dataset:
-  name: "comics_ocr_only"
+  dataset:
+    name: "comics_ocr_only"
   
 
 model:

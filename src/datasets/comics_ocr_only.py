@@ -26,6 +26,7 @@ class ComicsOcrOnlyDataset(Dataset[Any]):
     def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
         context = self.data[max(0, idx-4):idx+1].tolist()
         
+        #TODO: Replace hardcoded integers with config params
         while len(context) < 5:
             context.insert(0, "")
 

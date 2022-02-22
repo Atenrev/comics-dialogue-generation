@@ -12,7 +12,7 @@ class Metric:
     num_updates: float = 0.0
     average: float = 0.0
 
-    def update(self, value: float, batch_size: int):
+    def update(self, value: float, batch_size: int = 1):
         self.values.append(value)
         self.running_total += value * batch_size
         self.num_updates += batch_size
