@@ -2,13 +2,12 @@ import torch
 import numpy as np
 
 from typing import Any, Optional
-from enum import Enum, auto
 from tqdm import tqdm
 from sklearn.metrics import accuracy_score
 from torch.utils.data import DataLoader
 
 from src.metrics import Metric
-from src.trackers.tracker import ExperimentTracker, Stage
+from src.trackers.tracker import Stage
 
 
 class Runner:
