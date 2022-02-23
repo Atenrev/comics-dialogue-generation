@@ -8,13 +8,7 @@ from sklearn.metrics import accuracy_score
 from torch.utils.data import DataLoader
 
 from src.metrics import Metric
-
-
-class Stage(Enum):
-    # TODO: Move it to tracker
-    TRAIN = auto()
-    VAL = auto()
-    TEST = auto()
+from src.trackers.tracker import ExperimentTracker, Stage
 
 
 class Runner:

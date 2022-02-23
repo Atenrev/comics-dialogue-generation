@@ -106,3 +106,4 @@ data/
 comics.slurm
 /datasets/
 models/
+runs/

@@ -6,9 +6,13 @@ from typing import Any, Optional
 from transformers import PreTrainedTokenizer
 
 from src.runner import Runner
+from src.trackers.tensorboard_tracker import TensorboardExperiment
+from src.trackers.tracker import ExperimentTracker, Stage
 
 
 class Trainer:
+    config: Any
+    tracker: ExperimentTracker
     model: torch.nn.Module
     save_dir: str
     device: torch.device
@@ -26,6 +30,7 @@ class Trainer:
         self.model = model
         self.save_dir = config.save_dir
         self.device = device
+        self.config = config
 
         # Optimizer
         self.optimizer = self._get_optimizer(config.optimizer)
@@ -39,13 +44,12 @@ class Trainer:
         # TODO: Split dataset, so pre-slice in chunks of context+answer+prediction lines
         create_dataloader = getattr(importlib.import_module(
             f"src.datasets.{config.dataset.name}"), "create_dataloader")
-        train_dataloader = create_dataloader(
-            tokenizer, config.batch_size)
+        train_dataloader, val_dataloader = create_dataloader(tokenizer, config)
 
         # Runners
         self.train_runner = Runner(
             self.model, train_dataloader, device, self.optimizer)
-        self.val_runner = Runner(self.model, train_dataloader, device)
+        self.val_runner = Runner(self.model, val_dataloader, device)
 
     def _get_optimizer(self, config: Any) -> torch.optim.Optimizer:
         if config.type == "adam":
@@ -71,19 +75,30 @@ class Trainer:
         }, os.path.join(
             self.save_dir, f"CHECKPOINT_EPOCH_{epoch + 1}.pt"))
 
-    def run_epoch(self) -> None:
-        # TODO: Tracker
-        print("- TRAINING EPOCH -\n")
+    def run_epoch(self, epoch_id: int) -> None:
+        print("\nTRAINING EPOCH:\n")
+        self.tracker.set_stage(Stage.TRAIN)
         self.train_runner.run_epoch()
-        print("- VALIDATION EPOCH -\n")
+        self.tracker.add_epoch_metric(
+            "loss", self.train_runner.average_loss, epoch_id)
+        self.tracker.add_epoch_metric(
+            "accuracy", self.train_runner.average_accuracy, epoch_id)
+
+        print("\nVALIDATION EPOCH:\n")
+        self.tracker.set_stage(Stage.VAL)
         self.val_runner.run_epoch()
+        self.tracker.add_epoch_metric(
+            "loss", self.val_runner.average_loss, epoch_id)
+        self.tracker.add_epoch_metric(
+            "accuracy", self.val_runner.average_accuracy, epoch_id)
 
     def train(self, num_epochs: int) -> None:
+        self.tracker = TensorboardExperiment(log_path=self.config.log_path)
         best_val_loss = torch.inf
 
         for epoch in range(num_epochs):
             print(f'\n\n ---- RUNNING EPOCH {epoch + 1}/{num_epochs} ----\n')
-            self.run_epoch()
+            self.run_epoch(epoch)
 
             train_loss = self.train_runner.average_loss
             train_acc = self.train_runner.average_accuracy
@@ -106,3 +121,4 @@ class Trainer:
 
             self.train_runner.reset()
             self.val_runner.reset()
+            self.tracker.flush()

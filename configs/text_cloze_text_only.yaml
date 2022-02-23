@@ -1,6 +1,7 @@
 trainer:
   epochs: 10
-  batch_size: 4
+  batch_size: 1
+  log_path: "./runs"
   save_dir: "models/"
 
   optimizer:
@@ -11,6 +12,8 @@ trainer:
 
   dataset:
     name: "comics_ocr_only"
+    context_lines: 5
+    answer_lines: 3
   
 
 model:
@@ -18,10 +21,10 @@ model:
 
   num_tokens: 32100
   encoder_size: 512
-  pooler_size: 128
+  pooler_size: 64
 
   max_context_lines: 5
-  max_context_size: 100
+  max_context_size: 8
 
   answer_lines: 3
   answer_embed_size: 128

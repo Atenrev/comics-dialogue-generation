@@ -1,4 +1,8 @@
 pytorch
 transformers
-munch
 sklearn
+pandas
+tensorboard
+matplotlib
+yaml
+munch
