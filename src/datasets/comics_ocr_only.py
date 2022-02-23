@@ -43,7 +43,7 @@ class ComicsOcrOnlyDataset(Dataset[Any]):
                 answer_indices.append(index)
                 i += 1
 
-            if i >= 2:
+            if i >= self.config.answer_lines - 1:
                 break
 
         answer_indices = np.array(answer_indices)
