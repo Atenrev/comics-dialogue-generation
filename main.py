@@ -23,7 +23,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def main(args) -> None:
+def main(args: argparse.Namespace) -> None:
     """
     T5-small output size = 512
     """

@@ -104,6 +104,7 @@ ENV/
 .vscode
 data/
 comics.slurm
+/dataset/
 /datasets/
 models/
 runs/

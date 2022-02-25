@@ -10,16 +10,16 @@ class TextClozeTextOnlyModel(nn.Module):
 
     def __init__(self, config: Any) -> None:
         super(TextClozeTextOnlyModel, self).__init__()
-        self.num_labels = config.answer_lines
+        self.num_labels = config.answer_candidates
         self.loss_function = nn.CrossEntropyLoss()
 
         self.answers_embedding = nn.Embedding(
             config.num_tokens, config.answer_embed_size)
         self.t5_encoder = BaseT5EncoderModule(config)
         self.scores_fc = nn.Linear(
-            config.answer_embed_size * config.answer_lines *
+            config.answer_embed_size * config.answer_candidates *
             config.answer_max_tokens + config.pooler_size,
-            config.answer_lines
+            config.answer_candidates
         )
 
     def forward(self,

@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader, Dataset
 from transformers import PreTrainedTokenizer
 
 
-DATASET_PATH = "datasets/COMICS/COMICS_ocr_file.csv"
+DATASET_PATH = "datasets/COMICS/text_only.csv"
 
 
 class ComicsOcrOnlyDataset(Dataset[Any]):
