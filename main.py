@@ -29,10 +29,12 @@ def main(args: argparse.Namespace) -> None:
     """
     device = torch.device(
         "cuda") if torch.cuda.is_available() else torch.device("cpu")
-    print(f'Selected device: {device}.')
+    print(f'SELECTED DEVICE: {device}.')
 
     # Configuration and checkpoint loading
     config = get_configuration(args.yaml_config)
+    print("SELECTED MODEL:", config.model.classname)
+    print("SELECTED DATASET:", config.trainer.dataset.name)
     checkpoint = None
 
     if args.load_checkpoint is not None:

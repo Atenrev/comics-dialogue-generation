@@ -12,7 +12,7 @@ trainer:
 
   dataset:
     name: "comics_ocr_only"
-    context_lines: 5
+    context_lines: 3
     answer_lines: 3
   
 
