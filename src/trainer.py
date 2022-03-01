@@ -78,7 +78,7 @@ class Trainer:
     def run_epoch(self, epoch_id: int) -> None:
         print("\nTRAINING EPOCH:\n")
         self.tracker.set_stage(Stage.TRAIN)
-        self.train_runner.run_epoch()
+        self.train_runner.run_epoch(self.tracker)
         self.tracker.add_epoch_metric(
             "loss", self.train_runner.average_loss, epoch_id)
         self.tracker.add_epoch_metric(
@@ -86,7 +86,7 @@ class Trainer:
 
         print("\nVALIDATION EPOCH:\n")
         self.tracker.set_stage(Stage.VAL)
-        self.val_runner.run_epoch()
+        self.val_runner.run_epoch(self.tracker)
         self.tracker.add_epoch_metric(
             "loss", self.val_runner.average_loss, epoch_id)
         self.tracker.add_epoch_metric(

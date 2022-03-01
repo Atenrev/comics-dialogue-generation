@@ -1,21 +1,21 @@
 import torch
-import json
+import pandas as pd
 import numpy as np
 
-from typing import Any, Dict, Tuple, List
+from typing import Any, Dict, Tuple
 from torch.utils.data import DataLoader, Dataset
 from transformers import PreTrainedTokenizer
 
 
-DATASET_PATH = "datasets/COMICS/text_only.json"
+DATASET_PATH = "datasets/COMICS/text_cloze_dev_easy.csv"
 
 
 class ComicsOcrOnlyDataset(Dataset[Any]):
-    samples: List[dict]
+    samples: pd.DataFrame
     tokenizer: PreTrainedTokenizer
 
     def __init__(self,
-                 samples: List[dict],
+                 samples: pd.DataFrame,
                  tokenizer: PreTrainedTokenizer,
                  config: Any
                  ):
@@ -25,10 +25,10 @@ class ComicsOcrOnlyDataset(Dataset[Any]):
 
     def __len__(self):
         # We don't want to get the last one
-        return 10  # len(self.data) - 1
+        return 100  # len(self.data) - 1
 
     def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
-        sample = self.samples[idx]
+        sample = self.samples.iloc(idx)
         context = [
             dialogue["text"]
             for panel in sample["context_panels"]
@@ -75,11 +75,15 @@ def create_dataloader(
     tokenizer: PreTrainedTokenizer,
     config: Any
 ) -> Tuple[DataLoader[Any], DataLoader[Any]]:
-    with open(DATASET_PATH, 'r') as f:
-        data = json.load(f)
+    # with open(DATASET_PATH, 'r') as f:
+    #     data = json.load(f)
 
-    samples = data["samples"]
-    dataset = ComicsOcrOnlyDataset(samples, tokenizer, config.dataset)
+    # samples = data["samples"]
+
+    df = pd.read_csv(DATASET_PATH, ',')
+    df = df.dropna()
+
+    dataset = ComicsOcrOnlyDataset(df, tokenizer, config.dataset)
     data_len = len(dataset)
     train_len = int(data_len * 0.8)
     train_dataset, val_dataset = torch.utils.data.random_split(
