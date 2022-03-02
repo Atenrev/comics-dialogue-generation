@@ -13,12 +13,20 @@ class TextClozeTextOnlyModel(nn.Module):
         self.num_labels = config.answer_candidates
         self.loss_function = nn.CrossEntropyLoss()
 
-        self.answers_embedding = nn.Embedding(
-            config.num_tokens, config.answer_embed_size)
+        # self.answers_embedding = nn.Embedding(
+        #     config.num_tokens, config.answer_embed_size)
         self.t5_encoder = BaseT5EncoderModule(config)
+        self.embedding = self.t5_encoder.encoder.shared
+        self.fc1 = nn.Sequential(nn.Linear(90*512, 512), nn.LeakyReLU())
+        self.dropout = nn.Dropout(config.dropout)
+
+        # self.scores_fc = nn.Linear(
+        #     config.answer_embed_size * config.answer_candidates *
+        #     config.answer_max_tokens + config.pooler_size,
+        #     config.answer_candidates
+        # )
         self.scores_fc = nn.Linear(
-            config.answer_embed_size * config.answer_candidates *
-            config.answer_max_tokens + config.pooler_size,
+            config.pooler_size,
             config.answer_candidates
         )
 
@@ -26,10 +34,17 @@ class TextClozeTextOnlyModel(nn.Module):
                 context: torch.Tensor,
                 answers: torch.Tensor,
                 targets: torch.Tensor) -> MultipleChoiceModelOutput:
-        outputs = self.t5_encoder(context)
-        answer_embedding_outputs = self.answers_embedding(answers)
-        outputs = torch.cat(
-            (outputs, answer_embedding_outputs.view(outputs.size(0), -1)), 1)
+        # inp = torch.cat((context, answers), 1)
+        context_encoding_outputs = self.t5_encoder(context)
+        context_encoding_outputs = self.dropout(context_encoding_outputs)
+        answer_embedding_outputs = self.embedding(answers)
+        answer_embedding_outputs = self.fc1(answer_embedding_outputs.view(answer_embedding_outputs.size(0), -1))
+        answer_embedding_outputs = self.dropout(answer_embedding_outputs)
+        # answer_encoding_outputs = self.t5_encoder(answers)
+        # .view(outputs.size(0), -1)
+        # outputs = torch.cat(
+        #     (context_encoding_outputs, answer_embedding_outputs), 1)
+        outputs = context_encoding_outputs + answer_embedding_outputs
         logits = self.scores_fc(outputs)
         loss = None
 

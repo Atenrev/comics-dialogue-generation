@@ -29,15 +29,15 @@ class ComicsOcrOnlyDataset(Dataset[Any]):
     def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
         sample = self.data.iloc[idx]
         context = [
-            sample["context_text_0_0"],
-            sample["context_text_0_1"],
-            sample["context_text_0_2"],
-            sample["context_text_1_0"],
-            sample["context_text_1_1"],
-            sample["context_text_1_2"],
-            sample["context_text_2_0"],
-            sample["context_text_2_1"],
-            sample["context_text_2_2"],
+            "<0_0>" + sample["context_text_0_0"],
+            "<0_1>" + sample["context_text_0_1"],
+            "<0_2>" + sample["context_text_0_2"],
+            "<1_0>" + sample["context_text_1_0"],
+            "<1_1>" + sample["context_text_1_1"],
+            "<1_2>" + sample["context_text_1_2"],
+            "<2_0>" + sample["context_text_2_0"],
+            "<2_1>" + sample["context_text_2_1"],
+            "<2_2>" + sample["context_text_2_2"],
         ]
 
         context = self.tokenizer(context, return_tensors="pt", truncation=True,
@@ -45,9 +45,9 @@ class ComicsOcrOnlyDataset(Dataset[Any]):
         context = context.view(-1)
         
         answers = [
-            sample["answer_candidate_0_text"],
-            sample["answer_candidate_1_text"],
-            sample["answer_candidate_2_text"],
+            "<c0>" + sample["answer_candidate_0_text"],
+            "<c1>" + sample["answer_candidate_1_text"],
+            "<c2>" + sample["answer_candidate_2_text"],
         ]
 
         answers = self.tokenizer(answers, return_tensors="pt", truncation=True,
