@@ -2,7 +2,7 @@ import argparse
 import torch
 import importlib
 
-from transformers import T5Tokenizer
+from transformers import T5Tokenizer, RobertaTokenizer
 
 from src.configuration import get_configuration
 from src.trainer import Trainer
@@ -10,11 +10,11 @@ from src.trainer import Trainer
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--yaml_config', type=str, default="configs/text_cloze_text_only.yaml",
+    parser.add_argument('--yaml_config', type=str, default="configs/text_cloze_text_only_t5.yaml",
                         help='YAML model config')
-    parser.add_argument('--mode', type=str, default="training",
+    parser.add_argument('--mode', type=str, default="train",
                         help='Execution mode ("training" or "inference")')
-    parser.add_argument('--model', type=str, default="text_cloze_model",
+    parser.add_argument('--model', type=str, default="text_cloze_model_t5",
                         help='Model to run')
     parser.add_argument('--load_checkpoint', type=str, default=None,
                         help='Path to model checkpoint')
@@ -48,14 +48,19 @@ def main(args: argparse.Namespace) -> None:
             return
 
     # Tokenizer and model
+    # TODO: Load tokenizer dynamically
     tokenizer = T5Tokenizer.from_pretrained("t5-small")
+    # tokenizer = RobertaTokenizer.from_pretrained("roberta-base")
     ModelClass = getattr(importlib.import_module(
         f"src.models.{args.model}"), config.model.classname)
     model = ModelClass(config.model).to(device)
 
-    if args.mode == "training":
+    if args.mode == "train":
         trainer = Trainer(model, tokenizer, device, config.trainer, checkpoint)
         trainer.train(config.trainer.epochs)
+    elif args.mode == "eval":
+        trainer = Trainer(model, tokenizer, device, config.trainer, checkpoint)
+        trainer.eval()
     elif args.mode == "inference":
         pass
 

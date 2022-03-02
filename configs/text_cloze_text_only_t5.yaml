@@ -1,34 +1,35 @@
 trainer:
   epochs: 10
-  batch_size: 4
+  batch_size: 12
   log_path: "./runs"
   save_dir: "models/"
 
   optimizer:
     type: "adam"
     params:
-      lr: 0.0001
+      lr: 0.00005
       beta: 0.5
 
   dataset:
-    name: "text_cloze_text_only"
+    name: "text_cloze_text_only_t5"
     answer_max_tokens: 30
     context_max_speech_size: 30
   
 
 model:
-  classname: "TextClozeTextOnlyModel"
+  classname: "TextClozeTextOnlyT5Model"
 
   num_tokens: 32100
+  embedding_size: 512
   encoder_size: 512
-  pooler_size: 512
-  dropout: 0.2
-  answer_embed_size: 512
+  dropout: 0.4
 
   answer_candidates: 3
   answer_max_tokens: 30
+  answer_embed_size: 128
 
   context_panels: 3
   context_max_boxes_size: 3
   context_max_speech_size: 30
+  pooler_size: 128
   

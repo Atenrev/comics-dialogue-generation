@@ -92,6 +92,18 @@ class Trainer:
         self.tracker.add_epoch_metric(
             "accuracy", self.val_runner.average_accuracy, epoch_id)
 
+    def eval(self) -> None:
+        print("\nVALIDATION EPOCH:\n")
+        self.val_runner.run_epoch()
+        val_loss = self.val_runner.average_loss
+        val_acc = self.val_runner.average_accuracy
+        summary = "\t".join([
+            f"EPOCH 1/1",
+            f"val loss {val_loss}",
+            f"val acc {val_acc}"
+        ])
+        print("\n" + summary + "\n")
+
     def train(self, num_epochs: int) -> None:
         self.tracker = TensorboardExperiment(log_path=self.config.log_path)
         best_val_loss = torch.inf

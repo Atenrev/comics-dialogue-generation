@@ -7,7 +7,8 @@ from torch.utils.data import DataLoader, Dataset
 from transformers import PreTrainedTokenizer
 
 
-DATASET_PATH = "datasets/COMICS/text_cloze_dev_easy.csv"
+TRAIN_DATASET_PATH = "datasets/COMICS/text_cloze_dev_easy.csv"
+VAL_DATASET_PATH = "datasets/COMICS/text_cloze_test_easy.csv"
 
 
 class ComicsOcrOnlyDataset(Dataset[Any]):
@@ -42,7 +43,7 @@ class ComicsOcrOnlyDataset(Dataset[Any]):
 
         context = self.tokenizer(context, return_tensors="pt", truncation=True,
                                  max_length=self.config.context_max_speech_size, padding="max_length").input_ids
-        context = context.view(-1)
+        # context = context.view(-1)
         
         answers = [
             "<c0>" + sample["answer_candidate_0_text"],
@@ -52,7 +53,7 @@ class ComicsOcrOnlyDataset(Dataset[Any]):
 
         answers = self.tokenizer(answers, return_tensors="pt", truncation=True,
                                  max_length=self.config.answer_max_tokens, padding="max_length").input_ids
-        answers = answers.view(-1)
+        # answers = answers.view(-1)
 
         targets = torch.zeros(3)
         targets[sample["correct_answer"]] = 1
@@ -73,14 +74,19 @@ def create_dataloader(
 
     # samples = data["samples"]
 
-    df = pd.read_csv(DATASET_PATH, ',')
-    df = df.fillna("")
+    dev_df = pd.read_csv(VAL_DATASET_PATH, ',')
+    dev_df = dev_df.fillna("")
+    test_df = pd.read_csv(TRAIN_DATASET_PATH, ',')
+    test_df = test_df.fillna("")
 
-    dataset = ComicsOcrOnlyDataset(df, tokenizer, config.dataset)
-    data_len = len(dataset)
+    df = pd.concat((dev_df, test_df))
+
+    train_dataset = ComicsOcrOnlyDataset(df, tokenizer, config.dataset)
+    # val_dataset = ComicsOcrOnlyDataset(val_df, tokenizer, config.dataset)
+    data_len = len(train_dataset)
     train_len = int(data_len * 0.8)
     train_dataset, val_dataset = torch.utils.data.random_split(
-        dataset, [train_len, data_len - train_len])
+        train_dataset, [train_len, data_len - train_len])
 
     train_dataloader = DataLoader(
         dataset=train_dataset,
