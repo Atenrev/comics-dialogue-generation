@@ -1,0 +1,26 @@
+trainer:
+  epochs: 75
+  batch_size: 24
+  log_path: "./runs"
+  save_dir: "models/"
+
+  optimizer:
+    type: "adafactor"
+
+
+model:
+  tokenizer: "t5-small"
+  classname: "TextClozeTextOnlyT5HierarchyModel"
+
+  num_tokens: 32100
+  embedding_size: 512
+  encoder_size: 512
+  dropout: 0.4
+  dropout_p: 0.2
+
+  answer_candidates: 3
+  answer_max_tokens: 30
+  answer_embed_size: 256
+
+  pooler_size: 256
+  
