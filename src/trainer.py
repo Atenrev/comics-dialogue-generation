@@ -47,7 +47,8 @@ class Trainer:
         # DataLoaders
         create_dataloader = getattr(importlib.import_module(
             f"src.datasets.{dataset_config.name}"), "create_dataloader")
-        train_dataloader, val_dataloader, test_dataloader = create_dataloader(tokenizer, config.batch_size, dataset_config)
+        train_dataloader, val_dataloader, test_dataloader = create_dataloader(
+            tokenizer, config.batch_size, dataset_config)
 
         # Runners
         self.train_runner = Runner(

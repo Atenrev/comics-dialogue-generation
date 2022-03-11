@@ -1,31 +1,14 @@
-trainer:
-  epochs: 10
-  batch_size: 10
-  log_path: "./runs"
-  save_dir: "models/"
+tokenizer: "roberta-base"
+classname: "TextClozeTextOnlyRobertaModel"
 
-  optimizer:
-    type: "adafactor"
+num_tokens: 32100
+dropout: 0.4
+encoder_size: 768
 
-  dataset:
-    name: "text_cloze_text_only"
-    answer_max_tokens: 30
-    context_max_speech_size: 30
-  
+answer_candidates: 3
+answer_max_tokens: 30
 
-model:
-  tokenizer: "roberta-base"
-  classname: "TextClozeTextOnlyRobertaModel"
-
-  num_tokens: 32100
-  dropout: 0.4
-  encoder_size: 768
-
-  answer_candidates: 3
-  answer_max_tokens: 30
-
-  context_panels: 3
-  context_max_boxes_size: 3
-  context_max_speech_size: 30
-  pooler_size: 256
-  
+context_panels: 3
+context_max_boxes_size: 3
+context_max_speech_size: 30
+pooler_size: 256

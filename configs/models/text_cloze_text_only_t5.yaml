@@ -1,24 +1,12 @@
-trainer:
-  epochs: 75
-  batch_size: 32
-  log_path: "./runs"
-  save_dir: "models/"
+tokenizer: "t5-small"
+classname: "TextClozeTextOnlyT5Model"
 
-  optimizer:
-    type: "adafactor"
+num_tokens: 32100
+answer_candidates: 3
 
+embedding_size: 512
+encoder_size: 512
 
-model:
-  tokenizer: "t5-small"
-  classname: "TextClozeTextOnlyT5Model"
-
-  num_tokens: 32100
-  answer_candidates: 3
-
-  embedding_size: 512
-  encoder_size: 512
-  
-  pooler_size: 256
-  dropout: 0.4
-  dropout_p: 0.2
-  
+pooler_size: 256
+dropout: 0.4
+dropout_p: 0.2
