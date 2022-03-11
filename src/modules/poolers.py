@@ -3,7 +3,7 @@ from typing import Any
 from torch import nn
 
 
-class T5Pooler(nn.Module):
+class BasePooler(nn.Module):
     """
     Based on https://www.kaggle.com/debarshichanda/explore-t5
     """

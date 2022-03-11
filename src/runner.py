@@ -68,14 +68,15 @@ class Runner:
 
             if tracker is not None:
                 tracker.add_batch_metric("loss", loss, self.run_count)
-                tracker.add_batch_metric("accuracy", batch_accuracy, self.run_count)
+                tracker.add_batch_metric(
+                    "accuracy", batch_accuracy, self.run_count)
 
             if self.stage is Stage.TRAIN:
                 self.optimizer.zero_grad()
                 outputs.loss.backward()
                 self.optimizer.step()
                 # lr_scheduler.step()
-            
+
             self.run_count += 1
 
     def reset(self) -> None:

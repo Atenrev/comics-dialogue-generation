@@ -55,13 +55,10 @@ class ComicsOcrOnlyDataset(Dataset[Any]):
                                  max_length=self.config.answer_max_tokens, padding="max_length").input_ids
         answers = answers.view(-1)
 
-        targets = torch.zeros(3)
-        targets[sample["correct_answer"]] = 1
-
         return {
             "context": context,
             "answers": answers,
-            "targets": targets
+            "targets": sample["correct_answer"]
         }
 
 

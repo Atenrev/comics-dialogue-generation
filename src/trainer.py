@@ -1,9 +1,11 @@
+from cgi import test
 import os
 import torch
 import importlib
 
 from typing import Any, Optional
 from transformers import PreTrainedTokenizer
+from transformers.optimization import Adafactor
 
 from src.runner import Runner
 from src.trackers.tensorboard_tracker import TensorboardExperiment
@@ -14,6 +16,7 @@ class Trainer:
     config: Any
     tracker: ExperimentTracker
     model: torch.nn.Module
+    dataset: Any
     save_dir: str
     device: torch.device
     optimizer: torch.optim.Optimizer
@@ -22,6 +25,7 @@ class Trainer:
 
     def __init__(self,
                  model: torch.nn.Module,
+                 dataset_config: Any,
                  tokenizer: PreTrainedTokenizer,
                  device: torch.device,
                  config: Any,
@@ -41,24 +45,37 @@ class Trainer:
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
         # DataLoaders
-        # TODO: Split dataset, so pre-slice in chunks of context+answer+prediction lines
         create_dataloader = getattr(importlib.import_module(
-            f"src.datasets.{config.dataset.name}"), "create_dataloader")
-        train_dataloader, val_dataloader = create_dataloader(tokenizer, config)
+            f"src.datasets.{dataset_config.name}"), "create_dataloader")
+        train_dataloader, val_dataloader, test_dataloader = create_dataloader(tokenizer, config.batch_size, dataset_config)
 
         # Runners
         self.train_runner = Runner(
             self.model, train_dataloader, device, self.optimizer)
         self.val_runner = Runner(self.model, val_dataloader, device)
+        self.test_runner = Runner(self.model, test_dataloader, device)
 
     def _get_optimizer(self, config: Any) -> torch.optim.Optimizer:
         if config.type == "adam":
             optimizer = torch.optim.Adam(
-                self.model.parameters(), lr=config.params.lr,
-                betas=(config.params.beta, 0.999))
+                self.model.parameters(),
+                lr=config.params.lr,
+                betas=(config.params.beta, 0.999)
+            )
         elif config.type == "sgd":
             optimizer = torch.optim.SGD(
-                self.model.parameters(), lr=config.params.lr)
+                self.model.parameters(),
+                lr=config.params.lr
+            )
+        elif config.type == "adafactor":
+            optimizer = Adafactor(
+                self.model.parameters(),
+                scale_parameter=True,
+                relative_step=True,
+                warmup_init=True,
+                clip_threshold=1.0,
+                lr=None
+            )
         else:
             raise Exception("Optimizer not set")
 
@@ -93,20 +110,20 @@ class Trainer:
             "accuracy", self.val_runner.average_accuracy, epoch_id)
 
     def eval(self) -> None:
-        print("\nVALIDATION EPOCH:\n")
-        self.val_runner.run_epoch()
-        val_loss = self.val_runner.average_loss
-        val_acc = self.val_runner.average_accuracy
+        print("\nTEST EPOCH:\n")
+        self.test_runner.run_epoch()
+        val_loss = self.test_runner.average_loss
+        val_acc = self.test_runner.average_accuracy
         summary = "\t".join([
             f"EPOCH 1/1",
-            f"val loss {val_loss}",
-            f"val acc {val_acc}"
+            f"test loss {val_loss}",
+            f"test acc {val_acc}"
         ])
         print("\n" + summary + "\n")
 
     def train(self, num_epochs: int) -> None:
         self.tracker = TensorboardExperiment(log_path=self.config.log_path)
-        best_val_loss = torch.inf
+        best_val_acc = 0
 
         for epoch in range(num_epochs):
             print(f'\n\n ---- RUNNING EPOCH {epoch + 1}/{num_epochs} ----\n')
@@ -127,9 +144,9 @@ class Trainer:
             ])
             print("\n" + summary + "\n")
 
-            if val_loss < best_val_loss:
-                best_val_loss = val_loss
-                self._save_train_checkpoint(epoch, best_val_loss)
+            if val_acc > best_val_acc:
+                best_val_acc = val_acc
+                self._save_train_checkpoint(epoch, val_loss)
 
             self.train_runner.reset()
             self.val_runner.reset()

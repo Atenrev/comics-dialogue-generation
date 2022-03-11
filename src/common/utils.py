@@ -1,5 +1,5 @@
 """
-Script from https://github.com/ArjanCodes/2021-data-science-refactor/blob/main/after/ds/utils.py
+Some functions from https://github.com/ArjanCodes/2021-data-science-refactor/blob/main/after/ds/utils.py
 """
 import pathlib
 from typing import List

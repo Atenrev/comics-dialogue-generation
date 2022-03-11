@@ -10,7 +10,7 @@ from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 from torch.utils.tensorboard import SummaryWriter
 
 from src.trackers.tracker import Stage
-from src.utils import create_experiment_log_dir
+from src.common.utils import create_experiment_log_dir
 
 
 class TensorboardExperiment:
