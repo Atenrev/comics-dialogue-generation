@@ -42,6 +42,9 @@ class ComicsOcrOnlyDataset(Dataset[Any]):
             sample["context_text_2_2"],
         ]
 
+        # blank_random_index = torch.randint(9, (1,))
+        # context[blank_random_index] = ""
+
         context = self.tokenizer(context, return_tensors="pt", truncation=True,
                                  max_length=self.config.context_max_speech_size, padding="max_length").input_ids
         
@@ -71,13 +74,14 @@ class ComicsOcrOnlyDataset(Dataset[Any]):
 def create_dataloader(
     tokenizer: PreTrainedTokenizer,
     batch_size: int,
+    dataset_path: str,
     config: Any
 ) -> Tuple[DataLoader[Any], DataLoader[Any]]:
-    train_df = pd.read_csv(f"datasets/COMICS/text_cloze_train_{config.mode}.csv", ',')
+    train_df = pd.read_csv(f"{dataset_path}/text_cloze_train_{config.mode}.csv", ',')
     train_df = train_df.fillna("")
-    dev_df = pd.read_csv(f"datasets/COMICS/text_cloze_dev_{config.mode}.csv", ',')
+    dev_df = pd.read_csv(f"{dataset_path}/text_cloze_dev_{config.mode}.csv", ',')
     dev_df = dev_df.fillna("")
-    test_df = pd.read_csv(f"datasets/COMICS/text_cloze_test_{config.mode}.csv", ',')
+    test_df = pd.read_csv(f"{dataset_path}/text_cloze_test_{config.mode}.csv", ',')
     test_df = test_df.fillna("")
 
     train_dataset = ComicsOcrOnlyDataset(train_df, tokenizer, config)

@@ -9,6 +9,6 @@ dropout_p: 0.2
 
 answer_candidates: 3
 answer_max_tokens: 30
-answer_embed_size: 256
+answer_embed_size: 384
 
 pooler_size: 256

@@ -1,5 +1,5 @@
 epochs: 75
-batch_size: 24
+batch_size: 16
 log_path: "./runs"
 save_dir: "models/"
 

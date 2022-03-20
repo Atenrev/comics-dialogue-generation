@@ -1,10 +1,10 @@
 """
 Script from https://github.com/ArjanCodes/2021-data-science-refactor/blob/main/after/ds/tensorboard.py
 """
+import numpy as np
+
 from pathlib import Path
 from typing import List, Tuple
-
-import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 from torch.utils.tensorboard import SummaryWriter

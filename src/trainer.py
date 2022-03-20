@@ -25,6 +25,7 @@ class Trainer:
 
     def __init__(self,
                  model: torch.nn.Module,
+                 dataset_dir: str,
                  dataset_config: Any,
                  tokenizer: PreTrainedTokenizer,
                  device: torch.device,
@@ -48,7 +49,7 @@ class Trainer:
         create_dataloader = getattr(importlib.import_module(
             f"src.datasets.{dataset_config.name}"), "create_dataloader")
         train_dataloader, val_dataloader, test_dataloader = create_dataloader(
-            tokenizer, config.batch_size, dataset_config)
+            tokenizer, config.batch_size, dataset_dir, dataset_config)
 
         # Runners
         self.train_runner = Runner(
@@ -104,7 +105,8 @@ class Trainer:
 
         print("\nVALIDATION EPOCH:\n")
         self.tracker.set_stage(Stage.VAL)
-        self.val_runner.run_epoch(self.tracker)
+        with torch.no_grad():
+            self.val_runner.run_epoch(self.tracker)
         self.tracker.add_epoch_metric(
             "loss", self.val_runner.average_loss, epoch_id)
         self.tracker.add_epoch_metric(
@@ -112,11 +114,12 @@ class Trainer:
 
     def eval(self) -> None:
         print("\nTEST EPOCH:\n")
-        self.test_runner.run_epoch()
+        with torch.no_grad():
+            self.test_runner.run_epoch()
         val_loss = self.test_runner.average_loss
         val_acc = self.test_runner.average_accuracy
         summary = "\t".join([
-            f"EPOCH 1/1",
+            f"TEST EPOCH",
             f"test loss {val_loss}",
             f"test acc {val_acc}"
         ])

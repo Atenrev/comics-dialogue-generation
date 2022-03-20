@@ -1,11 +1,12 @@
-tokenizer: "t5-small"
+tokenizer: "t5-base"
+architecture: "t5-base"
 classname: "TextClozeTextOnlyT5Model"
 
 num_tokens: 32100
 answer_candidates: 3
 
-embedding_size: 512
-encoder_size: 512
+embedding_size: 768
+encoder_size: 768
 
 pooler_size: 256
 dropout: 0.4

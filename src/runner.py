@@ -47,13 +47,13 @@ class Runner:
         return self.accuracy_metric.average
 
     def run_epoch(self, tracker: ExperimentTracker = None) -> None:
-        self.model.train(self.stage is Stage.TRAIN)
+        self.model.train(self.stage is Stage.TRAIN)            
 
         for local_batch in tqdm(self.data_loader):
             batch = {k: v.to(self.device) for k, v in local_batch.items()}
             batch_len = len(batch)
             outputs = self.model(**batch)
-            loss = outputs.loss.detach().cpu().numpy()
+            loss = outputs.loss.detach().cpu().mean().numpy()
 
             # Compute Batch Metrics
             self.loss_metric.update(loss)
@@ -64,6 +64,7 @@ class Runner:
                 outputs.logits.detach().cpu().numpy(), axis=1)
             batch_accuracy: float = accuracy_score(
                 targets_np, outputs_prediction_np)
+            batch_accuracy = np.mean(batch_accuracy)
             self.accuracy_metric.update(batch_accuracy, batch_len)
 
             if tracker is not None:
@@ -73,7 +74,7 @@ class Runner:
 
             if self.stage is Stage.TRAIN:
                 self.optimizer.zero_grad()
-                outputs.loss.backward()
+                outputs.loss.mean().backward()
                 self.optimizer.step()
                 # lr_scheduler.step()
 
