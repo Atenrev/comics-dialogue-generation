@@ -1,4 +1,5 @@
-tokenizer: "t5-small"
+tokenizer: "sentence-transformers/all-MiniLM-L6-v2"
+architecture: "t5-small"
 classname: "TextClozeTextOnlyT5HierarchyModel"
 
 num_tokens: 32100

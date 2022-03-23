@@ -109,3 +109,4 @@ comics.slurm
 /models/
 runs/
 environment.yml
+experiments.json

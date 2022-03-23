@@ -7,12 +7,14 @@ from typing import Any, Optional
 from transformers import PreTrainedTokenizer
 from transformers.optimization import Adafactor
 
+from src.common.utils import create_experiment_dir
 from src.runner import Runner
 from src.trackers.tensorboard_tracker import TensorboardExperiment
 from src.trackers.tracker import ExperimentTracker, Stage
 
 
 class Trainer:
+    experiment_uuid: str
     config: Any
     tracker: ExperimentTracker
     model: torch.nn.Module
@@ -30,10 +32,12 @@ class Trainer:
                  tokenizer: PreTrainedTokenizer,
                  device: torch.device,
                  config: Any,
-                 checkpoint: Optional[dict]
+                 checkpoint: Optional[dict] = None,
+                 experiment_uuid: Optional[str] = ""
                  ) -> None:
+        self.experiment_uuid = experiment_uuid
         self.model = model
-        self.save_dir = config.save_dir
+        self.save_dir = save_dir = create_experiment_dir(config.save_dir, experiment_uuid)
         self.device = device
         self.config = config
 
@@ -85,14 +89,15 @@ class Trainer:
 
     def _save_train_checkpoint(self, epoch, loss) -> None:
         print("\nNEW BEST MODEL, saving checkpoint.")
-        os.makedirs(self.save_dir, exist_ok=True)
+         
+        save_path = os.path.join(self.save_dir, f"epoch_{epoch + 1}.pt")
+
         torch.save({
             'epoch': epoch,
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
             'loss': loss,
-        }, os.path.join(
-            self.save_dir, f"CHECKPOINT_EPOCH_{epoch + 1}.pt"))
+        }, save_path)
 
     def run_epoch(self, epoch_id: int) -> None:
         print("\nTRAINING EPOCH:\n")
@@ -126,7 +131,8 @@ class Trainer:
         print("\n" + summary + "\n")
 
     def train(self, num_epochs: int) -> None:
-        self.tracker = TensorboardExperiment(log_path=self.config.log_path)
+        self.tracker = TensorboardExperiment(
+            log_path=self.config.log_path, experiment_uuid=self.experiment_uuid)
         best_val_acc = 0
 
         for epoch in range(num_epochs):
@@ -150,7 +156,7 @@ class Trainer:
 
             if val_acc > best_val_acc:
                 best_val_acc = val_acc
-                self._save_train_checkpoint(epoch, val_loss)
+                self._save_train_checkpoint(epoch, train_loss)
 
             self.train_runner.reset()
             self.val_runner.reset()

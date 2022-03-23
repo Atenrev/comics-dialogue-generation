@@ -5,6 +5,7 @@ import importlib
 from transformers import AutoTokenizer
 
 from src.common.configuration import get_dataset_configuration, get_model_configuration, get_trainer_configuration
+from src.common.utils import generate_experiment_uuid
 from src.trainer import Trainer
 
 
@@ -15,12 +16,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--dataset_config', type=str, default="text_cloze_text_only_easy",
                         help='Dataset config to use')
     parser.add_argument('--trainer_config', type=str, default="default",
-                        help='Trainer params to use') 
+                        help='Trainer params to use')
     parser.add_argument('--dataset_dir', type=str, default="datasets/COMICS/",
                         help='Dataset directory path')
-    parser.add_argument('--mode', type=str, default="eval",
+    parser.add_argument('--mode', type=str, default="train",
                         help='Execution mode ("training", "eval" or "inference")')
-    parser.add_argument('--load_checkpoint', type=str, default="models/t5base_epoch5_66easy.pt",
+    parser.add_argument('--load_checkpoint', type=str, default=None, #"models/t5base_epoch5_66easy.pt",
                         help='Path to model checkpoint')
 
     args = parser.parse_args()
@@ -56,22 +57,28 @@ def main(args: argparse.Namespace) -> None:
         f"src.models.{args.model}"), model_config.classname)
     model = ModelClass(model_config).to(device)
 
-    if torch.cuda.device_count() > 1 or True:
-        print(torch.cuda.device_count())
-        model = torch.nn.DataParallel(model)
+    # is_parallel = isinstance(model, torch.nn.DataParallel) or isinstance(
+    #     model, torch.nn.parallel.DistributedDataParallel
+    # )
+
+    # if torch.cuda.device_count() > 1 or is_parallel:
+    model = torch.nn.DataParallel(model)
 
     # Load model checkpoint
     if checkpoint is not None:
         model.load_state_dict(checkpoint["model_state_dict"])
 
+    experiment_uuid = generate_experiment_uuid(
+        trainer_config, dataset_config, model_config)
+
     if args.mode == "train":
         trainer = Trainer(model, args.dataset_dir, dataset_config, tokenizer,
-                          device, trainer_config, checkpoint)
+                          device, trainer_config, checkpoint, experiment_uuid)
         trainer.train(trainer_config.epochs)
     elif args.mode == "eval":
         assert checkpoint is not None
         trainer = Trainer(model, args.dataset_dir, dataset_config, tokenizer,
-                          device, trainer_config, checkpoint)
+                          device, trainer_config, checkpoint, experiment_uuid)
         trainer.eval()
     elif args.mode == "inference":
         assert checkpoint is not None

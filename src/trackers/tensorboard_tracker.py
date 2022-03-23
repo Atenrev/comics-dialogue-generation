@@ -10,12 +10,13 @@ from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 from torch.utils.tensorboard import SummaryWriter
 
 from src.trackers.tracker import Stage
-from src.common.utils import create_experiment_log_dir
+from src.common.utils import create_experiment_dir
 
 
 class TensorboardExperiment:
-    def __init__(self, log_path: str, create: bool = True):
-        log_dir = create_experiment_log_dir(root=log_path)
+    def __init__(self, log_path: str, experiment_uuid: str = "", create: bool = True):
+        log_dir = create_experiment_dir(
+            root=log_path, experiment_uuid=experiment_uuid)
         self.stage = Stage.TRAIN
         self._validate_log_dir(log_dir, create=create)
         self._writer = SummaryWriter(log_dir=log_dir)
@@ -62,6 +63,7 @@ class TensorboardExperiment:
     def create_confusion_matrix(
         self, y_true: List[np.ndarray], y_pred: List[np.ndarray], step: int
     ) -> plt.Figure:
-        cm = ConfusionMatrixDisplay(confusion_matrix(y_true, y_pred)).plot(cmap="Blues")
+        cm = ConfusionMatrixDisplay(confusion_matrix(
+            y_true, y_pred)).plot(cmap="Blues")
         cm.ax_.set_title(f"{self.stage.name} Epoch: {step}")
         return cm.figure_
