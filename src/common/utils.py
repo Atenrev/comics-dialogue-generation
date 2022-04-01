@@ -7,32 +7,36 @@ import uuid
 
 from typing import List
 
+from src.common.registry import Registry
 
-def create_experiment_dir(root: str, experiment_uuid: str = "", parents: bool = True) -> str:
+
+def create_experiment_dir(root: str, experiment_name: str, parents: bool = True) -> str:
     root_path = pathlib.Path(root).resolve()
     child = (
-        create_from_missing(root_path, experiment_uuid)
+        create_from_missing(root_path, experiment_name)
         if not root_path.exists()
-        else create_from_existing(root_path, experiment_uuid)
+        else create_from_existing(root_path, experiment_name)
     )
     child.mkdir(parents=parents)
-    return child.as_posix()
+    models_path = child / "models"
+    models_path.mkdir()
+    return child.as_posix(), models_path.as_posix()
 
 
-def create_from_missing(root: pathlib.Path, experiment_uuid: str = "") -> pathlib.Path:
-    return root / f"0-{experiment_uuid}"
+def create_from_missing(root: pathlib.Path, experiment_name: str = "") -> pathlib.Path:
+    return root / f"0-{experiment_name}"
 
 
-def create_from_existing(root: pathlib.Path, experiment_uuid: str = "") -> pathlib.Path:
+def create_from_existing(root: pathlib.Path, experiment_name: str = "") -> pathlib.Path:
     children = [
         int(c.name.split("-")[0]) for c in root.glob("*")
         if (c.is_dir() and c.name.split("-")[0].isnumeric())
     ]
     if is_first_experiment(children):
-        child = create_from_missing(root, experiment_uuid)
+        child = create_from_missing(root, experiment_name)
     else:
         child = root / \
-            f"{increment_experiment_number(children)}-{experiment_uuid}"
+            f"{increment_experiment_number(children)}-{experiment_name}"
     return child
 
 
@@ -44,29 +48,9 @@ def increment_experiment_number(children: List[int]) -> str:
     return str(len(children) + 1)
 
 
-def add_new_experiment(new_data, filename='experiments.json'):
-    root_path = pathlib.Path(filename).resolve()
-
-    if not root_path.exists():
-        with open(filename,'w') as file:
-            json.dump({"experiments": []}, file)
-
-    with open(filename,'r+') as file:
-        file_data = json.load(file)
-        file_data["experiments"].append(new_data)
-        file.seek(0)
-        json.dump(file_data, file, indent = 4)
-
-
-def generate_experiment_uuid(trainer_config, dataset_config, model_config):
-    experiment_uuid = f"{model_config.classname}_{dataset_config.name}_{str(uuid.uuid4())}"
-    config = {
-        "name": experiment_uuid,
-        "trainer": trainer_config,
-        "dataset": dataset_config,
-        "model": model_config
-    }
-    
-    add_new_experiment(config)
-
-    return experiment_uuid
+def generate_experiment_name():
+    # Load configs from registry
+    model_config = Registry.get("model_config")
+    dataset_config = Registry.get("dataset_config")
+    experiment_name = f"{model_config.classname}_{dataset_config.name}_{str(uuid.uuid4())}"
+    return experiment_name

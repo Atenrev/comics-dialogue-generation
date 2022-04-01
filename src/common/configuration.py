@@ -14,9 +14,11 @@ def get_model_configuration(yaml_path: str) -> Any:
     yaml_path = os.path.join("configs/models", yaml_path + ".yaml")
     return get_configuration(yaml_path)
     
+
 def get_dataset_configuration(yaml_path: str) -> Any: 
     yaml_path = os.path.join("configs/datasets", yaml_path + ".yaml")
     return get_configuration(yaml_path)
+
 
 def get_trainer_configuration(yaml_path: str) -> Any: 
     yaml_path = os.path.join("configs/trainers", yaml_path + ".yaml")

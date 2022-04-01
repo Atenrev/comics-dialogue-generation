@@ -1,26 +1,44 @@
 """
 Script from https://github.com/ArjanCodes/2021-data-science-refactor/blob/main/after/ds/tensorboard.py
 """
+import json
+import os
 import numpy as np
 
 from pathlib import Path
+import torch
 from typing import List, Tuple
 from matplotlib import pyplot as plt
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 from torch.utils.tensorboard import SummaryWriter
 
 from src.trackers.tracker import Stage
-from src.common.utils import create_experiment_dir
+from src.common.registry import Registry
+from src.common.utils import create_experiment_dir, generate_experiment_name
 
 
 class TensorboardExperiment:
-    def __init__(self, log_path: str, experiment_uuid: str = "", create: bool = True):
-        log_dir = create_experiment_dir(
-            root=log_path, experiment_uuid=experiment_uuid)
+    def __init__(self, log_path: str, create: bool = True):
+        experiment_name = generate_experiment_name()
+        log_dir, self.models_dir = create_experiment_dir(
+            root=log_path, experiment_name=experiment_name)
         self.stage = Stage.TRAIN
         self._validate_log_dir(log_dir, create=create)
         self._writer = SummaryWriter(log_dir=log_dir)
+        self.save_configs_json()
         plt.ioff()
+
+    def save_configs_json(self):
+        configs = {
+            "trainer": Registry.get("trainer_config"),
+            "model": Registry.get("model_config"),
+            "dataset": Registry.get("dataset_config")
+        }
+        configs_json_path = os.path.join(self._writer.log_dir, "configs.json")
+
+        with open(configs_json_path, "w") as f:
+            json.dump(configs, f, indent=4)
+
 
     def set_stage(self, stage: Stage):
         self.stage = stage
@@ -37,6 +55,17 @@ class TensorboardExperiment:
             log_path.mkdir(parents=True)
         else:
             raise NotADirectoryError(f"log_dir {log_dir} does not exist.")
+
+    def save_checkpoint(self, epoch: int, model: torch.nn.Module, optimizer: torch.optim.Optimizer):
+        print("\nNEW BEST MODEL, saving checkpoint.")
+         
+        save_path = os.path.join(self.models_dir, f"epoch_{epoch + 1}.pt")
+
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+        }, save_path)
 
     def add_batch_metric(self, name: str, value: float, step: int):
         tag = f"{self.stage.name}/batch/{name}"

@@ -2,6 +2,7 @@
 Script from https://github.com/ArjanCodes/2021-data-science-refactor/blob/main/after/ds/tracking.py
 """
 from enum import Enum, auto
+import torch
 from typing import List, Protocol
 import numpy as np
 
@@ -13,6 +14,9 @@ class Stage(Enum):
 
 
 class ExperimentTracker(Protocol):
+    def save_checkpoint(self, epoch: int, model: torch.nn.Module, optimizer: torch.optim.Optimizer):
+        """Saves a checkpoint of the model."""
+
     def set_stage(self, stage: Stage):
         """Sets the current stage of the experiment."""
 

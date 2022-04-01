@@ -1,7 +1,6 @@
 epochs: 50
 batch_size: 16
-log_path: "./runs/"
-save_dir: "./models/"
+runs_path: "./runs/"
 
 optimizer:
   type: "adafactor"

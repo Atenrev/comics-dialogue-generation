@@ -1,5 +1,4 @@
-from cgi import test
-import os
+import logging
 import torch
 import importlib
 
@@ -7,19 +6,17 @@ from typing import Any, Optional
 from transformers import PreTrainedTokenizer
 from transformers.optimization import Adafactor
 
-from src.common.utils import create_experiment_dir
 from src.runner import Runner
 from src.trackers.tensorboard_tracker import TensorboardExperiment
 from src.trackers.tracker import ExperimentTracker, Stage
 
 
 class Trainer:
-    experiment_uuid: str
+    experiment_name: str
     config: Any
     tracker: ExperimentTracker
     model: torch.nn.Module
     dataset: Any
-    save_dir: str
     device: torch.device
     optimizer: torch.optim.Optimizer
     train_runner: Runner
@@ -33,11 +30,8 @@ class Trainer:
                  device: torch.device,
                  config: Any,
                  checkpoint: Optional[dict] = None,
-                 experiment_uuid: Optional[str] = ""
                  ) -> None:
-        self.experiment_uuid = experiment_uuid
         self.model = model
-        self.save_dir = save_dir = create_experiment_dir(config.save_dir, experiment_uuid)
         self.device = device
         self.config = config
 
@@ -45,8 +39,7 @@ class Trainer:
         self.optimizer = self._get_optimizer(config.optimizer)
 
         if checkpoint is not None:
-            print("INFO: Loaded checkpoint. Epoch:",
-                  checkpoint["epoch"], "Loss:", checkpoint["loss"])
+            logging.info(f"Loaded checkpoint. Epoch: {checkpoint['epoch']} Loss: {checkpoint['loss']}")
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
         # DataLoaders
@@ -85,19 +78,7 @@ class Trainer:
         else:
             raise Exception("Optimizer not set")
 
-        return optimizer
-
-    def _save_train_checkpoint(self, epoch, loss) -> None:
-        print("\nNEW BEST MODEL, saving checkpoint.")
-         
-        save_path = os.path.join(self.save_dir, f"epoch_{epoch + 1}.pt")
-
-        torch.save({
-            'epoch': epoch,
-            'model_state_dict': self.model.state_dict(),
-            'optimizer_state_dict': self.optimizer.state_dict(),
-            'loss': loss,
-        }, save_path)
+        return optimizer        
 
     def run_epoch(self, epoch_id: int) -> None:
         print("\nTRAINING EPOCH:\n")
@@ -131,8 +112,7 @@ class Trainer:
         print("\n" + summary + "\n")
 
     def train(self, num_epochs: int) -> None:
-        self.tracker = TensorboardExperiment(
-            log_path=self.config.log_path, experiment_uuid=self.experiment_uuid)
+        self.tracker = TensorboardExperiment(log_path=self.config.runs_path)
         best_val_acc = 0
 
         for epoch in range(num_epochs):
@@ -156,7 +136,7 @@ class Trainer:
 
             if val_acc > best_val_acc:
                 best_val_acc = val_acc
-                self._save_train_checkpoint(epoch, train_loss)
+                self.tracker.save_checkpoint(epoch, self.model, self.optimizer)
 
             self.train_runner.reset()
             self.val_runner.reset()
