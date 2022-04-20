@@ -12,3 +12,6 @@ context_panels: 3
 context_max_boxes_size: 3
 context_max_speech_size: 30
 pooler_size: 256
+
+metrics:
+  - accuracy

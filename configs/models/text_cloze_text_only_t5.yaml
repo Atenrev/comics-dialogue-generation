@@ -11,3 +11,6 @@ encoder_size: 768
 pooler_size: 256
 dropout: 0.4
 dropout_p: 0.2
+
+metrics:
+  - accuracy

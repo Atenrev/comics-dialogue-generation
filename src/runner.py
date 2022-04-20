@@ -3,10 +3,10 @@ import numpy as np
 
 from typing import Any, Optional
 from tqdm import tqdm
-from sklearn.metrics import accuracy_score
 from torch.utils.data import DataLoader
+from src.common.registry import Registry
 
-from src.metrics import Metric
+from src.metrics import LossMetric, build_metrics
 from src.trackers.tracker import ExperimentTracker, Stage
 
 
@@ -33,18 +33,12 @@ class Runner:
         self.stage = Stage.TRAIN if optimizer is not None else Stage.VAL
 
         # Metrics
-        # TODO: When needed, another Metric class will be required
-        # Proposal: Create 2 or subclasses that inherit the Metric class
-        self.loss_metric = Metric()
-        self.accuracy_metric = Metric()
+        self.loss_metric = LossMetric()
+        self.metrics = build_metrics(Registry.get("model_config").metrics)
 
     @property
     def average_loss(self) -> float:
         return self.loss_metric.average
-
-    @property
-    def average_accuracy(self) -> float:
-        return self.accuracy_metric.average
 
     def run_epoch(self, tracker: ExperimentTracker = None) -> None:
         self.model.train(self.stage is Stage.TRAIN)            
@@ -53,24 +47,24 @@ class Runner:
             batch = {k: v.to(self.device) for k, v in local_batch.items()}
             batch_len = len(batch)
             outputs = self.model(**batch)
+            logits = outputs.logits.detach().cpu().numpy()
+            predictions = np.argmax(logits, axis=1)
+            targets = np.argmax(
+                batch["targets"].detach().cpu().numpy(), axis=1)
             loss = outputs.loss.detach().cpu().mean().numpy()
 
             # Compute Batch Metrics
             self.loss_metric.update(loss)
 
-            targets_np = np.argmax(
-                batch["targets"].detach().cpu().numpy(), axis=1)
-            outputs_prediction_np = np.argmax(
-                outputs.logits.detach().cpu().numpy(), axis=1)
-            batch_accuracy: float = accuracy_score(
-                targets_np, outputs_prediction_np)
-            batch_accuracy = np.mean(batch_accuracy)
-            self.accuracy_metric.update(batch_accuracy, batch_len)
-
             if tracker is not None:
                 tracker.add_batch_metric("loss", loss, self.run_count)
-                tracker.add_batch_metric(
-                    "accuracy", batch_accuracy, self.run_count)
+            
+            for metric in self.metrics:
+                val = metric.calculate_and_update(targets, predictions)     
+
+                if tracker is not None:       
+                    tracker.add_batch_metric(metric.name, val, self.run_count)
+            
 
             if self.stage is Stage.TRAIN:
                 self.optimizer.zero_grad()
@@ -81,5 +75,5 @@ class Runner:
             self.run_count += 1
 
     def reset(self) -> None:
-        self.loss_metric = Metric()
-        self.accuracy_metric = Metric()
+        self.loss_metric = LossMetric()
+        self.metrics = build_metrics(Registry.get("model_config").metrics)
