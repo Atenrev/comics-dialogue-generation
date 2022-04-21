@@ -12,15 +12,15 @@ from src.trainer import Trainer
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default="text_cloze_text_only_t5",
+    parser.add_argument('--model', type=str, default="visual_features_extractor_beit",
                         help='Model to run')
-    parser.add_argument('--dataset_config', type=str, default="text_cloze_text_only_easy",
+    parser.add_argument('--dataset_config', type=str, default="comics_raw_images",
                         help='Dataset config to use')
     parser.add_argument('--trainer_config', type=str, default="default",
                         help='Trainer params to use')
-    parser.add_argument('--dataset_dir', type=str, default="datasets/COMICS/",
+    parser.add_argument('--dataset_dir', type=str, default="datasets/COMICS/images/",
                         help='Dataset directory path')
-    parser.add_argument('--mode', type=str, default="eval",
+    parser.add_argument('--mode', type=str, default="inference",
                         help='Execution mode ("training", "eval" or "inference")')
     parser.add_argument('--load_checkpoint', type=str, default=None,
                         help='Path to model checkpoint')
@@ -30,7 +30,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def main(args: argparse.Namespace) -> None:
-    logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
+    logging.basicConfig(
+        format='%(levelname)s: %(message)s', level=logging.INFO)
 
     device = torch.device(
         "cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -67,8 +68,20 @@ def main(args: argparse.Namespace) -> None:
             print(e)
             return
 
-    # Tokenizer and model
-    tokenizer = AutoTokenizer.from_pretrained(model_config.tokenizer)
+    # Model and preprocessing
+    tokenizer = None
+    if model_config.tokenizer:
+        tokenizer = AutoTokenizer.from_pretrained(model_config.tokenizer)
+    
+    feature_extractor = None
+    if model_config.feature_extractor:
+        from transformers import BeitFeatureExtractor
+        feature_extractor = BeitFeatureExtractor.from_pretrained(model_config.feature_extractor)
+    
+    transform = None
+    if model_config.transforms:
+        raise NotImplementedError("Transforms are not implemented yet.")
+
     ModelClass = getattr(importlib.import_module(
         f"src.models.{args.model}"), model_config.classname)
     model = ModelClass(model_config).to(device)
@@ -90,8 +103,40 @@ def main(args: argparse.Namespace) -> None:
                           device, trainer_config, checkpoint)
         trainer.eval()
     elif args.mode == "inference":
-        assert checkpoint is not None, "ERROR: No checkpoint provided."
-        raise NotImplementedError
+        from tqdm import tqdm
+        
+        model.train(False)
+
+        # DataLoaders
+        create_dataloader = getattr(importlib.import_module(
+            f"src.datasets.{dataset_config.name}"), "create_dataloader")
+        train_dataloader, val_dataloader, test_dataloader = create_dataloader(
+            2,
+            args.dataset_dir,
+            dataset_config,
+            dataset_kwargs={
+                "feature_extractor": feature_extractor,
+            }
+        )
+
+        # Runs the model through the dataset and saves the features
+        # of the images in "\datasets\COMICS\features"
+        for local_batch in tqdm(train_dataloader):
+            batch = {
+                k: (v.to(device) 
+                if type(v) is torch.Tensor
+                else {k2: v2.to(device) for k2, v2 in v.items()}
+                if type(v) is dict
+                else v)
+                for k, v in local_batch.items()
+            }
+            batch_len = len(batch)
+            outputs = model(**batch)
+
+            for i in range(batch_len):
+                image_id = batch["image_id"][i]
+                image_features = outputs[i]
+                torch.save(image_features, f"{image_id}.pt")
 
 
 if __name__ == "__main__":

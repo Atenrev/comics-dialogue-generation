@@ -29,7 +29,7 @@ class Trainer:
                  model: torch.nn.Module,
                  dataset_dir: str,
                  dataset_config: Any,
-                 tokenizer: PreTrainedTokenizer,
+                 dataset_kwargs: dict,
                  device: torch.device,
                  config: Any,
                  checkpoint: Optional[dict] = None,
@@ -50,7 +50,7 @@ class Trainer:
         create_dataloader = getattr(importlib.import_module(
             f"src.datasets.{dataset_config.name}"), "create_dataloader")
         train_dataloader, val_dataloader, test_dataloader = create_dataloader(
-            tokenizer, config.batch_size, dataset_dir, dataset_config)
+            config.batch_size, dataset_dir, dataset_config, dataset_kwargs)
 
         # Runners
         self.train_runner = Runner(

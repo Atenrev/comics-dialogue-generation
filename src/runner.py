@@ -44,7 +44,14 @@ class Runner:
         self.model.train(self.stage is Stage.TRAIN)            
 
         for local_batch in tqdm(self.data_loader):
-            batch = {k: v.to(self.device) for k, v in local_batch.items()}
+            batch = {
+                k: (v.to(device) 
+                if type(v) is torch.Tensor
+                else {k2: v2.to(device) for k2, v2 in v.items()}
+                if type(v) is dict
+                else v)
+                for k, v in local_batch.items()
+            }
             batch_len = len(batch)
             outputs = self.model(**batch)
             logits = outputs.logits.detach().cpu().numpy()
