@@ -110,3 +110,4 @@ comics.slurm
 runs/
 environment.yml
 experiments.json
+eval_report.txt
