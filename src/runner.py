@@ -11,12 +11,6 @@ from src.trackers.tracker import ExperimentTracker, Stage
 
 
 class Runner:
-    model: torch.nn.Module
-    optimizer: Optional[torch.optim.Optimizer]
-    data_loader: DataLoader
-    device: torch.device
-    stage: Stage
-    run_count: int
 
     def __init__(
         self,
@@ -45,9 +39,9 @@ class Runner:
 
         for local_batch in tqdm(self.data_loader):
             batch = {
-                k: (v.to(device) 
+                k: (v.to(self.device) 
                 if type(v) is torch.Tensor
-                else {k2: v2.to(device) for k2, v2 in v.items()}
+                else {k2: v2.to(self.device) for k2, v2 in v.items()}
                 if type(v) is dict
                 else v)
                 for k, v in local_batch.items()

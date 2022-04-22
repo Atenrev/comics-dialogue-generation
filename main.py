@@ -12,17 +12,17 @@ from src.trainer import Trainer
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default="visual_features_extractor_beit",
+    parser.add_argument('--model', type=str, default="text_cloze_text_only_t5",
                         help='Model to run')
-    parser.add_argument('--dataset_config', type=str, default="comics_raw_images",
+    parser.add_argument('--dataset_config', type=str, default="text_cloze_text_only_easy",
                         help='Dataset config to use')
     parser.add_argument('--trainer_config', type=str, default="default",
                         help='Trainer params to use')
-    parser.add_argument('--dataset_dir', type=str, default="datasets/COMICS/images/",
+    parser.add_argument('--dataset_dir', type=str, default="datasets/COMICS/",
                         help='Dataset directory path')
-    parser.add_argument('--mode', type=str, default="inference",
+    parser.add_argument('--mode', type=str, default="train",
                         help='Execution mode ("training", "eval" or "inference")')
-    parser.add_argument('--load_checkpoint', type=str, default="runs/9-TextClozeTextOnlyT5Model_text_cloze_text_only_74428095-e2c3-4f02-9dcb-0e5e0f8264d4/models/epoch_50.pt",
+    parser.add_argument('--load_checkpoint', type=str, default=None,
                         help='Path to model checkpoint')
 
     args = parser.parse_args()
@@ -58,7 +58,7 @@ def main(args: argparse.Namespace) -> None:
         try:
             checkpoint = torch.load(args.load_checkpoint, map_location=device)
             checkpoint["model_state_dict"] = {
-                (k.replace("module.", "") if k.startswith("module.") else k) : v
+                (k.replace("module.", "") if k.startswith("module.") else k): v
                 for k, v in checkpoint["model_state_dict"].items()
             }
             # is_parallel = True
@@ -71,15 +71,22 @@ def main(args: argparse.Namespace) -> None:
     tokenizer = None
     if model_config.tokenizer:
         tokenizer = AutoTokenizer.from_pretrained(model_config.tokenizer)
-    
+
     feature_extractor = None
     if model_config.feature_extractor:
         from transformers import BeitFeatureExtractor
-        feature_extractor = BeitFeatureExtractor.from_pretrained(model_config.feature_extractor)
-    
+        feature_extractor = BeitFeatureExtractor.from_pretrained(
+            model_config.feature_extractor)
+
     transform = None
     if model_config.transforms:
         raise NotImplementedError("Transforms are not implemented yet.")
+
+    dataset_kwargs = {
+        "tokenizer": tokenizer,
+        "feature_extractor": feature_extractor,
+        "transforme": transform,
+    }
 
     ModelClass = getattr(importlib.import_module(
         f"src.models.{args.model}"), model_config.classname)
@@ -92,27 +99,41 @@ def main(args: argparse.Namespace) -> None:
     if torch.cuda.device_count() > 1:
         model = torch.nn.DataParallel(model)
 
-    if args.mode == "train":
-        trainer = Trainer(model, args.dataset_dir, dataset_config, tokenizer,
-                          device, trainer_config, checkpoint)
-        trainer.train(trainer_config.epochs)
-    elif args.mode == "eval":
-        assert checkpoint is not None, "ERROR: No checkpoint provided."
-        trainer = Trainer(model, args.dataset_dir, dataset_config, tokenizer,
-                          device, trainer_config, checkpoint)
-        trainer.eval()
+    if args.mode != "inference":
+        # DataLoaders
+        create_dataloader = getattr(importlib.import_module(
+            f"src.datasets.{dataset_config.name}"), "create_dataloader")
+        train_dataloader, val_dataloader, test_dataloader = create_dataloader(
+            trainer_config.batch_size,
+            args.dataset_dir,
+            dataset_config,
+            dataset_kwargs=dataset_kwargs
+        )
+
+        trainer = Trainer(model, device, trainer_config, checkpoint)
+
+        if args.mode == "train":
+            trainer.train(train_dataloader, val_dataloader,
+                          trainer_config.epochs)
+        elif args.mode == "eval":
+            assert checkpoint is not None, "ERROR: No checkpoint provided."
+            trainer.eval(test_dataloader)
+        else:
+            raise
+
     elif args.mode == "inference":
         from tqdm import tqdm
-        
+
         model.train(False)
 
         # DataLoaders
         create_dataloader = getattr(importlib.import_module(
             f"src.datasets.{dataset_config.name}"), "create_dataloader")
-        train_dataloader, val_dataloader, test_dataloader = create_dataloader(
-            2,
+        dataloader = create_dataloader(
+            64,
             args.dataset_dir,
             dataset_config,
+            inference=True,
             dataset_kwargs={
                 "feature_extractor": feature_extractor,
             }
@@ -120,13 +141,13 @@ def main(args: argparse.Namespace) -> None:
 
         # Runs the model through the dataset and saves the features
         # of the images in "\datasets\COMICS\features"
-        for local_batch in tqdm(train_dataloader):
+        for local_batch in tqdm(dataloader):
             batch = {
-                k: (v.to(device) 
-                if type(v) is torch.Tensor
-                else {k2: v2.to(device) for k2, v2 in v.items()}
-                if type(v) is dict
-                else v)
+                k: (v.to(device)
+                    if type(v) is torch.Tensor
+                    else {k2: v2.to(device) for k2, v2 in v.items()}
+                    if type(v) is dict
+                    else v)
                 for k, v in local_batch.items()
             }
             batch_len = len(batch)

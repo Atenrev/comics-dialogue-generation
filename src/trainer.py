@@ -5,6 +5,7 @@ import importlib
 import numpy as np
 
 from typing import Any, Optional
+from torch.utils.data import DataLoader
 from transformers.optimization import Adafactor
 
 from src.common.registry import Registry
@@ -14,21 +15,9 @@ from src.trackers.tracker import ExperimentTracker, Stage
 
 
 class Trainer:
-    experiment_name: str
-    config: Any
-    tracker: ExperimentTracker
-    model: torch.nn.Module
-    dataset: Any
-    device: torch.device
-    optimizer: torch.optim.Optimizer
-    train_runner: Runner
-    val_runner: Runner
 
     def __init__(self,
                  model: torch.nn.Module,
-                 dataset_dir: str,
-                 dataset_config: Any,
-                 dataset_kwargs: dict,
                  device: torch.device,
                  config: Any,
                  checkpoint: Optional[dict] = None,
@@ -43,18 +32,6 @@ class Trainer:
         if checkpoint is not None:
             logging.info(f"Loaded checkpoint. Epoch: {checkpoint['epoch']}")
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-
-        # DataLoaders
-        create_dataloader = getattr(importlib.import_module(
-            f"src.datasets.{dataset_config.name}"), "create_dataloader")
-        train_dataloader, val_dataloader, test_dataloader = create_dataloader(
-            config.batch_size, dataset_dir, dataset_config, dataset_kwargs)
-
-        # Runners
-        self.train_runner = Runner(
-            self.model, train_dataloader, device, self.optimizer)
-        self.val_runner = Runner(self.model, val_dataloader, device)
-        self.test_runner = Runner(self.model, test_dataloader, device)
 
     def _get_optimizer(self, config: Any) -> torch.optim.Optimizer:
         if config.type == "adam":
@@ -104,7 +81,9 @@ class Trainer:
             self.tracker.add_epoch_metric(
                 metric.name, metric.average, epoch_id)
 
-    def eval(self, folds: int = 10) -> None:
+    def eval(self, test_dataloader: DataLoader, folds: int = 10) -> None:
+        self.test_runner = Runner(self.model, test_dataloader, self.device)
+
         print("\nTEST EPOCH:\n")
         final_metrics = {
             "loss": [],
@@ -141,8 +120,16 @@ class Trainer:
 
         print(report)
 
-    def train(self, num_epochs: int) -> None:
+    def train(self,
+              train_dataloader: DataLoader,
+              val_dataloader: DataLoader,
+              num_epochs: int) -> None:
+        self.train_runner = Runner(
+            self.model, train_dataloader, self.device, self.optimizer)
+        self.val_runner = Runner(self.model, val_dataloader, self.device)
+
         self.tracker = TensorboardExperiment(log_path=self.config.runs_path)
+
         best_val_value = 0
 
         for epoch in range(num_epochs):

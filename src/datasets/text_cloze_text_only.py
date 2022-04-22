@@ -71,11 +71,14 @@ class ComicsOcrOnlyDataset(Dataset[Any]):
 
 
 def create_dataloader(
-    tokenizer: PreTrainedTokenizer,
     batch_size: int,
     dataset_path: str,
-    config: Any
-) -> Tuple[DataLoader[Any], DataLoader[Any]]:
+    config: Any,
+    inference: bool = False,
+    dataset_kwargs: dict = {},
+) -> Tuple[DataLoader[Any], DataLoader[Any], DataLoader[Any]]:
+    assert not inference, "This dataset cannot be used for inference."
+    
     train_df = pd.read_csv(f"{dataset_path}/text_cloze_train_{config.mode}.csv", ',')
     train_df = train_df.fillna("")
     dev_df = pd.read_csv(f"{dataset_path}/text_cloze_dev_{config.mode}.csv", ',')
@@ -83,9 +86,9 @@ def create_dataloader(
     test_df = pd.read_csv(f"{dataset_path}/text_cloze_test_{config.mode}.csv", ',')
     test_df = test_df.fillna("")
 
-    train_dataset = ComicsOcrOnlyDataset(train_df, tokenizer, config)
-    val_dataset = ComicsOcrOnlyDataset(dev_df, tokenizer, config)
-    test_dataset = ComicsOcrOnlyDataset(test_df, tokenizer, config)
+    train_dataset = ComicsOcrOnlyDataset(train_df, dataset_kwargs["tokenizer"], config)
+    val_dataset = ComicsOcrOnlyDataset(dev_df, dataset_kwargs["tokenizer"], config)
+    test_dataset = ComicsOcrOnlyDataset(test_df, dataset_kwargs["tokenizer"], config)
 
     train_dataloader = DataLoader(
         dataset=train_dataset,
