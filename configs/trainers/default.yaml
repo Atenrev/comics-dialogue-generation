@@ -1,6 +1,7 @@
 epochs: 50
 batch_size: 16
 runs_path: "./runs/"
+report_path: "./"
 
 optimizer:
   type: "adafactor"

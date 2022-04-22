@@ -13,3 +13,6 @@ answer_max_tokens: 30
 answer_embed_size: 384
 
 pooler_size: 256
+
+metrics:
+  - accuracy
