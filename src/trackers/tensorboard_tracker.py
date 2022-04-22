@@ -3,10 +3,10 @@ Script from https://github.com/ArjanCodes/2021-data-science-refactor/blob/main/a
 """
 import json
 import os
+import torch
 import numpy as np
 
 from pathlib import Path
-import torch
 from typing import List, Tuple
 from matplotlib import pyplot as plt
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
@@ -38,7 +38,6 @@ class TensorboardExperiment:
 
         with open(configs_json_path, "w") as f:
             json.dump(configs, f, indent=4)
-
 
     def set_stage(self, stage: Stage):
         self.stage = stage

@@ -2,7 +2,7 @@ import torch
 import math
 from typing import Any
 from torch import nn
-from transformers import AutoModel, RobertaForMultipleChoice, RobertaModel, T5EncoderModel
+from transformers import AutoModel, RobertaModel, T5EncoderModel
 
 from src.modules.embeddings import PositionalEncoding, T5Embedding
 from src.modules.poolers import MeanPooler
@@ -16,11 +16,6 @@ class BaseT5EncoderModule(nn.Module):
         self.encoder = T5EncoderModel.from_pretrained(config.architecture)
         # TODO: Load embedding dynamically
         self.embedding = self.encoder.shared
-        self.positional_encoder = PositionalEncoding(
-            dim_model=config.embedding_size, 
-            dropout_p=config.dropout_p, 
-            max_len=config.embedding_size
-        )
         self.pooler = MeanPooler(config)
 
         # for param in self.encoder.parameters():
@@ -28,8 +23,6 @@ class BaseT5EncoderModule(nn.Module):
 
     def forward(self, sequences: torch.Tensor) -> torch.Tensor:
         embedding = self.embedding(sequences)
-        embedding = embedding * math.sqrt(self.config.embedding_size)
-        embedding = self.positional_encoder(embedding)
         encoder_outputs = self.encoder(inputs_embeds=embedding)
         pooler_outputs = self.pooler(encoder_outputs.last_hidden_state)
         return pooler_outputs

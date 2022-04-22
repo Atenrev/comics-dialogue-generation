@@ -22,7 +22,7 @@ def parse_args() -> argparse.Namespace:
                         help='Dataset directory path')
     parser.add_argument('--mode', type=str, default="eval",
                         help='Execution mode ("training", "eval" or "inference")')
-    parser.add_argument('--load_checkpoint', type=str, default=None,
+    parser.add_argument('--load_checkpoint', type=str, default="runs/9-TextClozeTextOnlyT5Model_text_cloze_text_only_74428095-e2c3-4f02-9dcb-0e5e0f8264d4/models/epoch_50.pt",
                         help='Path to model checkpoint')
 
     args = parser.parse_args()
@@ -57,9 +57,8 @@ def main(args: argparse.Namespace) -> None:
         try:
             checkpoint = torch.load(args.load_checkpoint, map_location=device)
             checkpoint["model_state_dict"] = {
-                k.replace("module.", ""): v
+                (k.replace("module.", "") if k.startswith("module.") else k) : v
                 for k, v in checkpoint["model_state_dict"].items()
-                if k.startswith("module.")
             }
             # is_parallel = True
         except Exception as e:

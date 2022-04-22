@@ -39,7 +39,7 @@ class Trainer:
         self.optimizer = self._get_optimizer(config.optimizer)
 
         if checkpoint is not None:
-            logging.info(f"Loaded checkpoint. Epoch: {checkpoint['epoch']} Loss: {checkpoint['loss']}")
+            logging.info(f"Loaded checkpoint. Epoch: {checkpoint['epoch']}")
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
         # DataLoaders
