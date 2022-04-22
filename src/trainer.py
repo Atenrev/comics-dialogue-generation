@@ -84,7 +84,7 @@ class Trainer:
     def eval(self, test_dataloader: DataLoader, folds: int = 10) -> None:
         self.test_runner = Runner(self.model, test_dataloader, self.device)
 
-        print("\nTEST EPOCH:\n")
+        logging.info(f"Evaluating model. Running {folds} folds on test dataset.")
         final_metrics = {
             "loss": [],
         }
@@ -92,7 +92,9 @@ class Trainer:
         for metric_name in Registry.get("model_config").metrics:
             final_metrics[metric_name] = []
 
-        for _ in range(folds):
+        for i in range(folds):
+            logging.info(f"Running fold {i}...")
+
             with torch.no_grad():
                 self.test_runner.run_epoch()
 

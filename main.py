@@ -1,5 +1,6 @@
 import argparse
 import torch
+import numpy as np
 import importlib
 import logging
 
@@ -20,10 +21,11 @@ def parse_args() -> argparse.Namespace:
                         help='Trainer params to use')
     parser.add_argument('--dataset_dir', type=str, default="datasets/COMICS/",
                         help='Dataset directory path')
-    parser.add_argument('--mode', type=str, default="train",
+    parser.add_argument('--mode', type=str, default="eval",
                         help='Execution mode ("training", "eval" or "inference")')
     parser.add_argument('--load_checkpoint', type=str, default=None,
                         help='Path to model checkpoint')
+    parser.add_argument('--seed', type=int, default=42, help='Seed to use')
 
     args = parser.parse_args()
     return args
@@ -32,6 +34,10 @@ def parse_args() -> argparse.Namespace:
 def main(args: argparse.Namespace) -> None:
     logging.basicConfig(
         format='%(levelname)s: %(message)s', level=logging.INFO)
+
+
+    torch.manual_seed(0)
+    np.random.seed(args.seed)
 
     device = torch.device(
         "cuda") if torch.cuda.is_available() else torch.device("cpu")
