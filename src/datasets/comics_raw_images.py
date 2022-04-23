@@ -1,6 +1,7 @@
 import torch
 import glob
 import os
+import pandas as pd
 
 from PIL import Image
 from typing import Any, Tuple, List, Optional
@@ -14,6 +15,7 @@ class ComicsRawImages(BaseDataset):
 
     def __init__(self,
                  image_paths: List[str],
+                 ocr_file: pd.DataFrame,
                  device: torch.device,
                  config: Any,
                  transform: Any = None,
@@ -21,22 +23,53 @@ class ComicsRawImages(BaseDataset):
                  ):
         super().__init__(device, config)
         self.image_paths = image_paths
+        self.ocr_file = ocr_file
         self.transform = transform
         self.feature_extractor = feature_extractor
 
     def __len__(self):
         return len(self.image_paths)
 
+    def obfuscate_bounding_boxes(self,
+                                 image: Image.Image,
+                                 bounding_boxes: List[
+                                     Tuple[int, int, int, int]]
+                                 ) -> None:
+        """
+        Obfuscates the bounding boxes in the image.
+
+        Args:
+            image: Image to obfuscate.
+            bounding_boxes: List of bounding boxes to obfuscate.
+        """
+        for x1, y1, x2, y2 in bounding_boxes:
+            image.paste(0, (x1, y1, x2, y2))
+
     def getitem(self, idx: int) -> Sample:
         image_path = self.image_paths[idx]
 
-        # Generates the id of the sample from the name of the image and the parent directory.
-        sample_id = os.path.basename(
-            os.path.dirname(image_path)) + "_" + os.path.basename(image_path)
-        sample_id = sample_id.split(".")[0]
+        # Generates the id of the sample from the name of the image
+        # and the parent directory.
+        comic_no = os.path.basename(os.path.dirname(image_path))
+        page_no, panel_no = os.path.basename(
+            image_path).split(".")[0].split("_")
+        sample_id = f"{comic_no}_{page_no}_{panel_no}"
 
         image = Image.open(image_path)
         image = image.convert("RGB")
+
+        # Get all the bounding boxes for the current sample.
+        # Filter by the comic number, page number and panel number.
+        filtered_rows = self.ocr_file.loc[
+            (self.ocr_file["comic_no"] == int(comic_no)) &
+            (self.ocr_file["page_no"] == int(page_no)) &
+            (self.ocr_file["panel_no"] == int(panel_no))
+        ]
+        bounding_boxes = filtered_rows[[
+            "x1", "y1", "x2", "y2"]].values.astype("int").tolist()
+
+        # Obfuscate the bounding boxes.
+        self.obfuscate_bounding_boxes(image, bounding_boxes)
 
         if self.transform:
             image = self.transform(image)
@@ -44,7 +77,8 @@ class ComicsRawImages(BaseDataset):
             image = self.feature_extractor(image, return_tensors="pt")
             image["pixel_values"] = image["pixel_values"].squeeze(0)
         else:
-            raise ValueError("Either transform or feature_extractor must be provided")
+            raise ValueError(
+                "Either transform or feature_extractor must be provided")
 
         return Sample(sample_id, {
             "image": image,
@@ -59,9 +93,13 @@ def create_dataloader(
     inference: bool = False,
     dataset_kwargs: dict = {},
 ) -> Tuple[DataLoader[Any], Optional[DataLoader[Any]], Optional[DataLoader[Any]]]:
-    image_paths = glob.glob(os.path.join(dataset_path, "**/*.png"), recursive=True)
+    image_paths = glob.glob(os.path.join(
+        dataset_path, "**/*.png"), recursive=True)
+    ocr_file = pd.read_csv(os.path.join(
+        dataset_path, "COMICS_ocr_file.csv"))
 
-    dataset = ComicsRawImages(image_paths, device, config, **dataset_kwargs)
+    dataset = ComicsRawImages(image_paths, ocr_file,
+                              device, config, **dataset_kwargs)
 
     if not inference:
         # Split the dataset into train, validation, and test
@@ -97,6 +135,5 @@ def create_dataloader(
             shuffle=True,
             num_workers=0,
         )
-        
 
     return train_dataloader, val_dataloader, test_dataloader
