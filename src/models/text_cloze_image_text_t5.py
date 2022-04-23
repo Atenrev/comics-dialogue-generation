@@ -32,7 +32,7 @@ class TextClozeImageTextT5Model(nn.Module):
         """
         Args:
             dialogues: [batch_size, max_dialogue_length, max_dialogue_length]
-            images: [batch_size, max_panels, 196, 768]
+            images: [batch_size, max_panels, 197, 768]
             answers: [batch_size, max_dialogue_length, max_dialogue_length]
             targets: [batch_size]
 
