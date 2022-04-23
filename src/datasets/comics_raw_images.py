@@ -1,20 +1,25 @@
 import torch
 import glob
-import pandas as pd
+import os
 
 from PIL import Image
-from typing import Any, Dict, Tuple, List, Optional
-from torch.utils.data import DataLoader, Dataset
+from typing import Any, Tuple, List, Optional
+from torch.utils.data import DataLoader
+
+from src.sample import Sample
+from src.datasets.base_dataset import BaseDataset
 
 
-class ComicsRawImages(Dataset[Any]):
+class ComicsRawImages(BaseDataset):
 
     def __init__(self,
                  image_paths: List[str],
+                 device: torch.device,
                  config: Any,
                  transform: Any = None,
                  feature_extractor: Any = None
                  ):
+        super().__init__(device, config)
         self.image_paths = image_paths
         self.transform = transform
         self.feature_extractor = feature_extractor
@@ -22,8 +27,14 @@ class ComicsRawImages(Dataset[Any]):
     def __len__(self):
         return len(self.image_paths)
 
-    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
+    def getitem(self, idx: int) -> Sample:
         image_path = self.image_paths[idx]
+
+        # Generates the id of the sample from the name of the image and the parent directory.
+        sample_id = os.path.basename(
+            os.path.dirname(image_path)) + "_" + os.path.basename(image_path)
+        sample_id = sample_id.split(".")[0]
+
         image = Image.open(image_path)
         image = image.convert("RGB")
 
@@ -35,23 +46,22 @@ class ComicsRawImages(Dataset[Any]):
         else:
             raise ValueError("Either transform or feature_extractor must be provided")
 
-        return {
-            "image_id": image_path,
+        return Sample(sample_id, {
             "image": image,
-        }
+        })
 
 
 def create_dataloader(
     batch_size: int,
     dataset_path: str,
+    device: torch.device,
     config: Any,
     inference: bool = False,
     dataset_kwargs: dict = {},
 ) -> Tuple[DataLoader[Any], Optional[DataLoader[Any]], Optional[DataLoader[Any]]]:
-    # Make a list of all the image paths given the dataset_path
-    image_paths = glob.glob(f"{dataset_path}/*.png")
+    image_paths = glob.glob(os.path.join(dataset_path, "**/*.png"), recursive=True)
 
-    dataset = ComicsRawImages(image_paths, config, **dataset_kwargs)
+    dataset = ComicsRawImages(image_paths, device, config, **dataset_kwargs)
 
     if not inference:
         # Split the dataset into train, validation, and test

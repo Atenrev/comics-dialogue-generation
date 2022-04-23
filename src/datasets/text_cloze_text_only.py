@@ -1,9 +1,12 @@
 import torch
 import pandas as pd
 
-from typing import Any, Dict, Tuple
-from torch.utils.data import DataLoader, Dataset
+from typing import Any, Tuple
+from torch.utils.data import DataLoader
 from transformers import PreTrainedTokenizer
+
+from src.sample import Sample
+from src.datasets.base_dataset import BaseDataset
 
 
 TRAIN_DATASET_PATH = "datasets/COMICS/text_cloze_train_easy.csv"
@@ -11,23 +14,24 @@ VAL_DATASET_PATH = "datasets/COMICS/text_cloze_dev_easy.csv"
 TEST_DATASET_PATH = "datasets/COMICS/text_cloze_test_easy.csv"
 
 
-class ComicsOcrOnlyDataset(Dataset[Any]):
+class ComicsOcrOnlyDataset(BaseDataset):
     data: pd.DataFrame
     tokenizer: PreTrainedTokenizer
 
     def __init__(self,
                  data: pd.DataFrame,
                  tokenizer: PreTrainedTokenizer,
+                 device: torch.device,
                  config: Any
                  ):
+        super().__init__(device, config)
         self.data = data
         self.tokenizer = tokenizer
-        self.config = config
 
     def __len__(self):
         return len(self.data)
 
-    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
+    def getitem(self, idx: int) -> Sample:
         sample = self.data.iloc[idx]
         context = [
             sample["context_text_0_0"],
@@ -46,7 +50,7 @@ class ComicsOcrOnlyDataset(Dataset[Any]):
 
         context = self.tokenizer(context, return_tensors="pt", truncation=True,
                                  max_length=self.config.context_max_speech_size, padding="max_length").input_ids
-        
+
         answers = [
             sample["answer_candidate_0_text"],
             sample["answer_candidate_1_text"],
@@ -63,32 +67,39 @@ class ComicsOcrOnlyDataset(Dataset[Any]):
         answers = answers[permutation]
         targets = targets[permutation]
 
-        return {
+        return Sample(str(idx), {
             "context": context,
             "answers": answers,
             "targets": targets
-        }
+        })
 
 
 def create_dataloader(
     batch_size: int,
     dataset_path: str,
+    device: torch.device,
     config: Any,
     inference: bool = False,
     dataset_kwargs: dict = {},
 ) -> Tuple[DataLoader[Any], DataLoader[Any], DataLoader[Any]]:
     assert not inference, "This dataset cannot be used for inference."
-    
-    train_df = pd.read_csv(f"{dataset_path}/text_cloze_train_{config.mode}.csv", ',')
+
+    train_df = pd.read_csv(
+        f"{dataset_path}/text_cloze_train_{config.mode}.csv", ',')
     train_df = train_df.fillna("")
-    dev_df = pd.read_csv(f"{dataset_path}/text_cloze_dev_{config.mode}.csv", ',')
+    dev_df = pd.read_csv(
+        f"{dataset_path}/text_cloze_dev_{config.mode}.csv", ',')
     dev_df = dev_df.fillna("")
-    test_df = pd.read_csv(f"{dataset_path}/text_cloze_test_{config.mode}.csv", ',')
+    test_df = pd.read_csv(
+        f"{dataset_path}/text_cloze_test_{config.mode}.csv", ',')
     test_df = test_df.fillna("")
 
-    train_dataset = ComicsOcrOnlyDataset(train_df, dataset_kwargs["tokenizer"], config)
-    val_dataset = ComicsOcrOnlyDataset(dev_df, dataset_kwargs["tokenizer"], config)
-    test_dataset = ComicsOcrOnlyDataset(test_df, dataset_kwargs["tokenizer"], config)
+    train_dataset = ComicsOcrOnlyDataset(
+        train_df, dataset_kwargs["tokenizer"], device, config)
+    val_dataset = ComicsOcrOnlyDataset(
+        dev_df, dataset_kwargs["tokenizer"], device, config)
+    test_dataset = ComicsOcrOnlyDataset(
+        test_df, dataset_kwargs["tokenizer"], device, config)
 
     train_dataloader = DataLoader(
         dataset=train_dataset,

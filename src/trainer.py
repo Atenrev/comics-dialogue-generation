@@ -1,7 +1,6 @@
 import os
 import logging
 import torch
-import importlib
 import numpy as np
 
 from typing import Any, Optional
@@ -11,7 +10,7 @@ from transformers.optimization import Adafactor
 from src.common.registry import Registry
 from src.runner import Runner
 from src.trackers.tensorboard_tracker import TensorboardExperiment
-from src.trackers.tracker import ExperimentTracker, Stage
+from src.trackers.tracker import Stage
 
 
 class Trainer:
@@ -22,6 +21,15 @@ class Trainer:
                  config: Any,
                  checkpoint: Optional[dict] = None,
                  ) -> None:
+        """
+        Initialize the trainer.
+
+        Args:
+            model: The model to train.
+            device: The device to train the model on.
+            config: The configuration of the Trainer.
+            checkpoint: The checkpoint to load the optimizer and model from.
+            """
         self.model = model
         self.device = device
         self.config = config
@@ -34,6 +42,15 @@ class Trainer:
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
     def _get_optimizer(self, config: Any) -> torch.optim.Optimizer:
+        """
+        Get the optimizer for the model.
+
+        Args:
+            config: The optimizer configuration.
+
+        Returns:
+            The optimizer.
+        """
         if config.type == "adam":
             optimizer = torch.optim.Adam(
                 self.model.parameters(),
@@ -60,6 +77,12 @@ class Trainer:
         return optimizer
 
     def run_epoch(self, epoch_id: int) -> None:
+        """
+        Run an epoch of training.
+
+        Args:
+            epoch_id: The id of the epoch.
+        """
         print("\nTRAINING EPOCH:\n")
         self.tracker.set_stage(Stage.TRAIN)
         self.train_runner.run_epoch(self.tracker)
@@ -81,10 +104,19 @@ class Trainer:
             self.tracker.add_epoch_metric(
                 metric.name, metric.average, epoch_id)
 
-    def eval(self, test_dataloader: DataLoader, folds: int = 10) -> None:
+    def eval(self, test_dataloader: DataLoader[Any], folds: int = 10) -> None:
+        """
+        Evaluate the model on the given dataloader for the given number of folds.
+        Save the results to report_path.
+
+        Args:   
+            test_dataloader: The dataloader on which to evaluate the model.
+            folds: The number of folds to evaluate the model on.
+        """
         self.test_runner = Runner(self.model, test_dataloader, self.device)
 
-        logging.info(f"Evaluating model. Running {folds} folds on test dataset.")
+        logging.info(
+            f"Evaluating model. Running {folds} folds on test dataset.")
         final_metrics = {
             "loss": [],
         }
@@ -123,9 +155,17 @@ class Trainer:
         print(report)
 
     def train(self,
-              train_dataloader: DataLoader,
-              val_dataloader: DataLoader,
+              train_dataloader: DataLoader[Any],
+              val_dataloader: DataLoader[Any],
               num_epochs: int) -> None:
+        """
+        Train the model for num_epochs epochs on the given dataloaders.
+
+        Args:
+            train_dataloader: The dataloader for training.
+            val_dataloader: The dataloader for validation.
+            num_epochs: The number of epochs to train for.
+        """
         self.train_runner = Runner(
             self.model, train_dataloader, self.device, self.optimizer)
         self.val_runner = Runner(self.model, val_dataloader, self.device)

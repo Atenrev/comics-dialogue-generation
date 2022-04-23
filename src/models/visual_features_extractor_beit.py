@@ -11,6 +11,6 @@ class VisualFeaturesExtractorBeit(nn.Module):
         self.config = config
         self.beit = BeitModel.from_pretrained(config.architecture)
 
-    def forward(self, image: dict, image_id: str) -> torch.Tensor:
+    def forward(self, image: dict) -> torch.Tensor:
         embedding = self.beit(**image)
         return embedding

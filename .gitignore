@@ -103,6 +103,7 @@ ENV/
 # other
 .vscode
 data/
+inference_output/
 comics.slurm
 /dataset/
 /datasets/

@@ -19,6 +19,15 @@ class Runner:
         device: torch.device,
         optimizer: Optional[torch.optim.Optimizer] = None
     ) -> None:
+        """
+        Runner for training and evaluation.
+
+        Args:
+            model: The model to train.
+            data_loader: The data loader to use.
+            device: The device to train the model on.
+            optimizer: The optimizer to use.
+        """
         self.run_count = 0
         self.model = model
         self.optimizer = optimizer
@@ -35,18 +44,16 @@ class Runner:
         return self.loss_metric.average
 
     def run_epoch(self, tracker: ExperimentTracker = None) -> None:
+        """
+        Run an epoch of training or evaluation.
+
+        Args:
+            tracker: The ExperimentTracker to use.
+        """
         self.model.train(self.stage is Stage.TRAIN)            
 
         for local_batch in tqdm(self.data_loader):
-            batch = {
-                k: (v.to(self.device) 
-                if type(v) is torch.Tensor
-                else {k2: v2.to(self.device) for k2, v2 in v.items()}
-                if type(v) is dict
-                else v)
-                for k, v in local_batch.items()
-            }
-            batch_len = len(batch)
+            batch = local_batch["data"]
             outputs = self.model(**batch)
             logits = outputs.logits.detach().cpu().numpy()
             predictions = np.argmax(logits, axis=1)
@@ -76,5 +83,8 @@ class Runner:
             self.run_count += 1
 
     def reset(self) -> None:
+        """
+        Reset the metrics.
+        """
         self.loss_metric = LossMetric()
         self.metrics = build_metrics(Registry.get("model_config").metrics)
