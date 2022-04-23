@@ -16,6 +16,10 @@ class InferenceEngine:
     def __init__(self, model: torch.nn.Module, device: torch.device) -> None:
         """
         Constructor of the InferenceEngine.
+
+        Args:
+            model: The model to use.
+            device: The device to use.
         """
         self.model = model
         self.device = device
@@ -26,6 +30,9 @@ class InferenceEngine:
         """
         Run the inference engine through the dataloader and
         save the results to the output directory.
+
+        Args:
+            dataloader: The dataloader to use.
         """
         logging.info(f"Running inference on {len(dataloader)} samples.")
         self.model.eval()

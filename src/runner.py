@@ -57,6 +57,7 @@ class Runner:
             outputs = self.model(**batch)
             logits = outputs.logits.detach().cpu().numpy()
             predictions = np.argmax(logits, axis=1)
+            # TODO: Assign this variable only when working with logits
             targets = np.argmax(
                 batch["targets"].detach().cpu().numpy(), axis=1)
             loss = outputs.loss.detach().cpu().mean().numpy()
