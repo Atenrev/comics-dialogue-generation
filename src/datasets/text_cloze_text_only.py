@@ -5,7 +5,7 @@ from typing import Any, Tuple
 from torch.utils.data import DataLoader
 from transformers import PreTrainedTokenizer
 
-from src.sample import Sample
+from src.common.sample import Sample
 from src.datasets.base_dataset import BaseDataset
 
 

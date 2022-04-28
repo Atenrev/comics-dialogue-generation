@@ -9,7 +9,7 @@ from typing import Any, Tuple, List, Optional
 from torch.utils.data import DataLoader
 from transformers import BeitFeatureExtractor
 
-from src.sample import Sample
+from src.common.sample import Sample
 from src.datasets.base_dataset import BaseDataset
 
 

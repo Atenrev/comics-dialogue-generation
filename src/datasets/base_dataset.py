@@ -3,7 +3,7 @@ import torch
 from typing import Any
 from torch.utils.data import Dataset
 
-from src.sample import Sample
+from src.common.sample import Sample
 
 
 class BaseDataset(Dataset[Any]):
