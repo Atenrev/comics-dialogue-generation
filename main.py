@@ -14,19 +14,19 @@ from src.trainer import Trainer
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default="visual_features_extractor_beit",
+    parser.add_argument('--model', type=str, default="text_cloze_image_text_t5",
                         help='Model to run')
-    parser.add_argument('--dataset_config', type=str, default="comics_raw_images",
+    parser.add_argument('--dataset_config', type=str, default="text_cloze_image_text_easy",
                         help='Dataset config to use')
     parser.add_argument('--trainer_config', type=str, default="default",
                         help='Trainer params to use')
-    parser.add_argument('--dataset_dir', type=str, default="datasets/COMICS/images/",
+    parser.add_argument('--dataset_dir', type=str, default="datasets/COMICS/",
                         help='Dataset directory path')
-    parser.add_argument('--mode', type=str, default="inference",
+    parser.add_argument('--mode', type=str, default="train",
                         help='Execution mode ("training", "eval" or "inference")')
     parser.add_argument('--load_checkpoint', type=str, default=None,
                         help='Path to model checkpoint')
-    parser.add_argument('--batch_size', type=int, default=64,
+    parser.add_argument('--batch_size', type=int, default=1,
                         help='Batch size')
     parser.add_argument('--seed', type=int, default=42, help='Seed to use')
 

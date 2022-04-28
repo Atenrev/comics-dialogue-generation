@@ -2,10 +2,12 @@ import torch
 import glob
 import os
 import pandas as pd
+import numpy as np
 
 from PIL import Image
 from typing import Any, Tuple, List, Optional
 from torch.utils.data import DataLoader
+from transformers import BeitFeatureExtractor
 
 from src.sample import Sample
 from src.datasets.base_dataset import BaseDataset
@@ -18,8 +20,8 @@ class ComicsRawImages(BaseDataset):
                  ocr_file: pd.DataFrame,
                  device: torch.device,
                  config: Any,
-                 transform: Any = None,
-                 feature_extractor: Any = None
+                 transform: Optional[Any] = None,
+                 feature_extractor: Optional[BeitFeatureExtractor] = None
                  ):
         super().__init__(device, config)
         self.image_paths = image_paths
@@ -66,7 +68,7 @@ class ComicsRawImages(BaseDataset):
             (self.ocr_file["panel_no"] == int(panel_no))
         ]
         bounding_boxes = filtered_rows[[
-            "x1", "y1", "x2", "y2"]].values.astype("int").tolist()
+            "x1", "y1", "x2", "y2"]].dropna().values.astype("int").tolist()
 
         # Obfuscate the bounding boxes.
         self.obfuscate_bounding_boxes(image, bounding_boxes)
@@ -94,7 +96,7 @@ def create_dataloader(
     dataset_kwargs: dict = {},
 ) -> Tuple[DataLoader[Any], Optional[DataLoader[Any]], Optional[DataLoader[Any]]]:
     image_paths = glob.glob(os.path.join(
-        dataset_path, "**/*.png"), recursive=True)
+        dataset_path, "**/*.jpg"), recursive=True)
     ocr_file = pd.read_csv(os.path.join(
         dataset_path, "COMICS_ocr_file.csv"))
 
@@ -132,7 +134,7 @@ def create_dataloader(
         train_dataloader = DataLoader(
             dataset=dataset,
             batch_size=batch_size,
-            shuffle=True,
+            shuffle=False,
             num_workers=0,
         )
 

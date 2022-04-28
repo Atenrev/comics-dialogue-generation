@@ -3,7 +3,7 @@ from typing import Any
 from torch import nn
 from transformers.modeling_outputs import MultipleChoiceModelOutput
 
-from src.modules.encoders import BaseT5EncoderModule
+from src.modules.encoders import ImageTextT5EncoderModule
 from src.modules.poolers import MeanPooler
 
 
@@ -15,7 +15,7 @@ class TextClozeImageTextT5Model(nn.Module):
         self.num_labels = config.answer_candidates
         self.loss_function = nn.CrossEntropyLoss()
         self.images_pooler = MeanPooler(config)
-        self.encoder = BaseT5EncoderModule(config)
+        self.encoder = ImageTextT5EncoderModule(config)
         self.dropout = nn.Dropout(config.dropout)
         self.scores_fc = nn.Linear(
             config.pooler_size,
@@ -24,9 +24,9 @@ class TextClozeImageTextT5Model(nn.Module):
 
     def forward(
         self,
-        dialogues: torch.Tensor,
+        context_dialogues: torch.Tensor,
         images: torch.Tensor,
-        answers: torch.Tensor,
+        answer_dialogues: torch.Tensor,
         targets: torch.Tensor
     ) -> MultipleChoiceModelOutput:
         """
@@ -40,19 +40,17 @@ class TextClozeImageTextT5Model(nn.Module):
             loss: [batch_size]
             logits: [batch_size, num_labels]
         """
-        batch_size = dialogues.size(0)
+        batch_size = context_dialogues.size(0)
         
         # Images are not to be embedded
-        images = self.images_pooler(images)
+        # images = self.images_pooler(images)
 
-        joint = torch.cat(
-            (dialogues.view(batch_size, -1),
-            images.view(batch_size, -1),
-            answers.view(batch_size, -1)),
-            1
-        )
+        dialogues_joint = torch.cat((
+            context_dialogues.view(batch_size, -1),
+            answer_dialogues.view(batch_size, -1)
+            ), dim=1)
 
-        context_encoding_outputs = self.encoder(joint)
+        context_encoding_outputs = self.encoder(dialogues_joint, images)
         context_encoding_outputs = self.dropout(context_encoding_outputs)
         logits = self.scores_fc(context_encoding_outputs)
         loss = None
