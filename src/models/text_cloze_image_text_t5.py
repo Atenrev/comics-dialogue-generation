@@ -31,9 +31,9 @@ class TextClozeImageTextT5Model(nn.Module):
     ) -> MultipleChoiceModelOutput:
         """
         Args:
-            dialogues: [batch_size, max_dialogue_length, max_dialogue_length]
+            dialogues: [batch_size, max_dialogues, max_dialogue_length]
             images: [batch_size, max_panels, 197, 768]
-            answers: [batch_size, max_dialogue_length, max_dialogue_length]
+            answers: [batch_size, max_dialogues, max_dialogue_length]
             targets: [batch_size]
 
         Returns:

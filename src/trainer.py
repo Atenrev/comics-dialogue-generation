@@ -199,7 +199,7 @@ class Trainer:
             ])
             print("\n" + summary + "\n")
 
-            if val_loss > best_val_value:
+            if val_loss < best_val_value:
                 best_val_value = val_loss
                 self.tracker.save_checkpoint(epoch, self.model, self.optimizer)
 
