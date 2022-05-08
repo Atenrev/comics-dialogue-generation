@@ -4,7 +4,7 @@ import random
 import torch
 import numpy as np
 
-from src.models.vlt5 import VLT5
+from src.models.modeling_vlt5 import VLT5
 from src.tokenizers.vlt5_tokenizers import VLT5TokenizerFast
 
 

@@ -43,7 +43,7 @@ class Runner:
     def average_loss(self) -> float:
         return self.loss_metric.average
 
-    def run_epoch(self, tracker: ExperimentTracker = None) -> None:
+    def run_epoch(self, tracker: Optional[ExperimentTracker] = None) -> None:
         """
         Run an epoch of training or evaluation.
 
@@ -56,10 +56,8 @@ class Runner:
             batch = local_batch["data"]
             outputs = self.model(**batch)
             logits = outputs.logits.detach().cpu().numpy()
-            predictions = np.argmax(logits, axis=1)
-            # TODO: Assign this variable only when working with logits
-            targets = np.argmax(
-                batch["targets"].detach().cpu().numpy(), axis=1)
+            predictions = outputs.prediction.detach().cpu().numpy()
+            targets = batch["target"].detach().cpu().numpy()
             loss = outputs.loss.detach().cpu().mean().numpy()
 
             # Compute Batch Metrics

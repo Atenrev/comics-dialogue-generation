@@ -3,13 +3,14 @@ from typing import Any
 from torch import nn
 from transformers.modeling_outputs import MultipleChoiceModelOutput
 
-from src.modules.encoders import BaseRobertaEncoderModule, BaseT5EncoderModule
+from src.models.base_model import BaseModel
+from src.modules.encoders import BaseRobertaEncoderModule
 
 
-class TextClozeTextOnlyRobertaModel(nn.Module):
+class TextClozeTextOnlyRobertaModel(BaseModel):
 
     def __init__(self, config: Any) -> None:
-        super(TextClozeTextOnlyRobertaModel, self).__init__()
+        super(TextClozeTextOnlyRobertaModel, self).__init__(config)
         self.num_labels = config.answer_candidates
         self.loss_function = nn.CrossEntropyLoss()
         self.encoder = BaseRobertaEncoderModule(config)

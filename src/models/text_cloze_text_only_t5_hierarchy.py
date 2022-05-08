@@ -3,13 +3,14 @@ from typing import Any
 from torch import nn
 from transformers.modeling_outputs import MultipleChoiceModelOutput
 
+from src.models.base_model import BaseModel
 from src.modules.encoders import T5HierarchyEncoderModule
 
 
-class TextClozeTextOnlyT5HierarchyModel(nn.Module):
+class TextClozeTextOnlyT5HierarchyModel(BaseModel):
 
     def __init__(self, config: Any) -> None:
-        super(TextClozeTextOnlyT5HierarchyModel, self).__init__()
+        super(TextClozeTextOnlyT5HierarchyModel, self).__init__(config)
         self.num_labels = config.answer_candidates
         self.loss_function = nn.CrossEntropyLoss()
         self.encoder = T5HierarchyEncoderModule(config)

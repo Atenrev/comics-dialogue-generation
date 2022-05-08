@@ -3,7 +3,6 @@ import logging
 import torch
 
 from collections import OrderedDict
-from transformers import BatchFeature
 
 
 class Sample(OrderedDict):
@@ -51,13 +50,14 @@ class Sample(OrderedDict):
             elif (
                 type(value) is dict
                 or type(value) is OrderedDict
-                or type(value) is BatchFeature
             ):
                 new_sample.data[key] = {k: v.to(device)
                                         for k, v in value.items()}
             else:
-                logging.warning(
-                    f"Value of type {type(value)} could not be moved to device.")
+                # logging.warning(
+                #     f"Value of type {type(value)} could not be moved to device.", 
+                #     norepeat=True
+                #     )
                 new_sample.data[key] = value
 
         return new_sample

@@ -1,0 +1,25 @@
+classname: "TextClozeImageTextVLT5Model"
+backbone: "t5-base"
+tokenizer: "vlt5"
+
+feat_dim: 2048
+pos_dim: 4
+n_images: 4
+vocab_size: 32200
+
+use_vis_order_embedding: True
+
+dropout_rate: 0.1
+dropout: 0.1
+attention_dropout: 0.1
+activation_dropout: 0.1
+
+use_vis_layer_norm: True
+individual_vis_layer_norm: True
+losses: "lm,obj,attr,feat"
+
+share_vis_lang_layer_norm: False
+classifier: False
+
+metrics:
+  - accuracy

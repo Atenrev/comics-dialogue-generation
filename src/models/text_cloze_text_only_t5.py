@@ -3,13 +3,14 @@ from typing import Any
 from torch import nn
 from transformers.modeling_outputs import MultipleChoiceModelOutput
 
+from src.models.base_model import BaseModel
 from src.modules.encoders import BaseT5EncoderModule
 
 
-class TextClozeTextOnlyT5Model(nn.Module):
+class TextClozeTextOnlyT5Model(BaseModel):
 
     def __init__(self, config: Any) -> None:
-        super(TextClozeTextOnlyT5Model, self).__init__()
+        super(TextClozeTextOnlyT5Model, self).__init__(config)
         self.num_labels = config.answer_candidates
         self.loss_function = nn.CrossEntropyLoss()
         self.encoder = BaseT5EncoderModule(config)

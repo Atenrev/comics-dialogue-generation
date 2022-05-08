@@ -5,13 +5,13 @@ from transformers.modeling_outputs import MultipleChoiceModelOutput
 
 from src.modules.encoders import ImageTextT5EncoderModule
 from src.modules.poolers import MeanPooler
+from src.models.base_model import BaseModel
 
 
-class TextClozeImageTextT5Model(nn.Module):
+class TextClozeImageTextT5Model(BaseModel):
 
     def __init__(self, config: Any) -> None:
-        super(TextClozeImageTextT5Model, self).__init__()
-        self.config = config
+        super(TextClozeImageTextT5Model, self).__init__(config)
         self.num_labels = config.answer_candidates
         self.loss_function = nn.CrossEntropyLoss()
         self.images_pooler = MeanPooler(config)

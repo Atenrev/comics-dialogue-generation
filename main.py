@@ -10,13 +10,14 @@ from src.common.registry import Registry
 from src.common.configuration import get_dataset_configuration, get_model_configuration, get_trainer_configuration
 from src.inference import InferenceEngine
 from src.trainer import Trainer
+from src.tokenizers.vlt5_tokenizers import VLT5TokenizerFast
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default="text_cloze_image_text_t5",
+    parser.add_argument('--model', type=str, default="text_cloze_image_text_vlt5",
                         help='Model to run')
-    parser.add_argument('--dataset_config', type=str, default="text_cloze_image_text_easy",
+    parser.add_argument('--dataset_config', type=str, default="text_cloze_image_text_vlt5_easy",
                         help='Dataset config to use')
     parser.add_argument('--trainer_config', type=str, default="default",
                         help='Trainer params to use')
@@ -26,7 +27,7 @@ def parse_args() -> argparse.Namespace:
                         help='Execution mode ("training", "eval" or "inference")')
     parser.add_argument('--load_checkpoint', type=str, default=None,
                         help='Path to model checkpoint')
-    parser.add_argument('--batch_size', type=int, default=1,
+    parser.add_argument('--batch_size', type=int, default=4,
                         help='Batch size')
     parser.add_argument('--seed', type=int, default=42, help='Seed to use')
 
@@ -57,7 +58,14 @@ def main(args: argparse.Namespace) -> None:
     # Dataset preprocessing
     tokenizer = None
     if model_config.tokenizer:
-        tokenizer = AutoTokenizer.from_pretrained(model_config.tokenizer)
+        if model_config.tokenizer == "vlt5":
+            tokenizer = VLT5TokenizerFast.from_pretrained(
+                model_config.backbone,
+                max_length=model_config.max_text_length,
+                do_lower_case=model_config.do_lower_case,
+            )
+        else:
+            tokenizer = AutoTokenizer.from_pretrained(model_config.tokenizer)
 
     feature_extractor = None
     if model_config.feature_extractor:
@@ -95,11 +103,12 @@ def main(args: argparse.Namespace) -> None:
             print(e)
             return
 
-        checkpoint["model_state_dict"] = {
-            (k.replace("module.", "") if k.startswith("module.") else k): v
-            for k, v in checkpoint["model_state_dict"].items()
-        }
-        model.load_state_dict(checkpoint["model_state_dict"])
+        # checkpoint["model_state_dict"] = {
+        #     (k.replace("module.", "") if k.startswith("module.") else k): v
+        #     for k, v in checkpoint["model_state_dict"].items()
+        # }
+        # model.load_state_dict(checkpoint["model_state_dict"], strict=False)
+        model.load_checkpoint(checkpoint["model_state_dict"])
 
     if torch.cuda.device_count() > 1:
         model = torch.nn.DataParallel(model)

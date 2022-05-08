@@ -4,6 +4,7 @@ Base code from Unifying Vision-and-Language Tasks via Text Generation
 """
 
 from dataclasses import dataclass
+from transformers import T5Config
 
 from transformers.models.t5.modeling_t5 import (
     T5Stack, T5Block, T5LayerNorm, T5ForConditionalGeneration
@@ -13,7 +14,7 @@ import torch
 import torch.nn as nn
 from torch.nn import CrossEntropyLoss
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, OrderedDict, Tuple
 import copy
 
 from transformers.modeling_outputs import (
@@ -382,6 +383,52 @@ class VLT5(T5ForConditionalGeneration):
         # Model parallel
         self.model_parallel = False
         self.device_map = None
+
+    @classmethod
+    def create_model_config(cls, args: Any) -> T5Config:
+        config = T5Config.from_pretrained(args.backbone)
+
+        config.feat_dim = args.feat_dim
+        config.pos_dim = args.pos_dim
+        config.n_images = args.n_images
+        config.vocab_size = args.vocab_size
+
+        config.use_vis_order_embedding = args.use_vis_order_embedding
+
+        config.dropout_rate = args.dropout
+        config.dropout = args.dropout
+        config.attention_dropout = args.dropout
+        config.activation_dropout = args.dropout
+
+        config.use_vis_layer_norm = args.use_vis_layer_norm
+        config.individual_vis_layer_norm = args.individual_vis_layer_norm
+        config.losses = args.losses
+
+        config.share_vis_lang_layer_norm = args.share_vis_lang_layer_norm
+        config.classifier = args.classifier
+
+        return config
+
+    def load_checkpoint(self, state_dict: OrderedDict) -> None:
+        # Change Multi GPU to single GPU
+        original_keys = list(state_dict.keys())
+        for key in original_keys:
+            if key.startswith("module."):
+                new_key = key[len("module."):]
+                state_dict[new_key] = state_dict.pop(key)
+
+        original_keys = list(state_dict.keys())
+
+        for key in original_keys:
+            if key.startswith("vis_encoder."):
+                new_key = 'encoder.' + key[len("vis_encoder."):]
+                state_dict[new_key] = state_dict.pop(key)
+
+            if key.startswith("model.vis_encoder."):
+                new_key = 'model.encoder.' + key[len("model.vis_encoder."):]
+                state_dict[new_key] = state_dict.pop(key)
+
+        self.load_state_dict(state_dict, strict=False)
 
     def set_input_embeddings(self, new_embeddings):
         self.shared = new_embeddings
