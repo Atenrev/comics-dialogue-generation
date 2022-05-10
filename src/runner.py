@@ -17,7 +17,8 @@ class Runner:
         model: torch.nn.Module,
         data_loader: DataLoader[Any],
         device: torch.device,
-        optimizer: Optional[torch.optim.Optimizer] = None
+        optimizer: Optional[torch.optim.Optimizer] = None,
+        scheduler: Optional[torch.optim.lr_scheduler.LambdaLR] = None,
     ) -> None:
         """
         Runner for training and evaluation.
@@ -31,6 +32,7 @@ class Runner:
         self.run_count = 0
         self.model = model
         self.optimizer = optimizer
+        self.scheduler = scheduler
         self.data_loader = data_loader
         self.device = device
         self.stage = Stage.TRAIN if optimizer is not None else Stage.VAL
@@ -53,9 +55,8 @@ class Runner:
         self.model.train(self.stage is Stage.TRAIN)            
 
         for local_batch in tqdm(self.data_loader):
-            batch = local_batch["data"]
+            batch = local_batch["data"] if "data" in local_batch else local_batch
             outputs = self.model(**batch)
-            logits = outputs.logits.detach().cpu().numpy()
             predictions = outputs.prediction.detach().cpu().numpy()
             targets = batch["target"].detach().cpu().numpy()
             loss = outputs.loss.detach().cpu().mean().numpy()
@@ -72,12 +73,13 @@ class Runner:
                 if tracker is not None:       
                     tracker.add_batch_metric(metric.name, val, self.run_count)
             
-
-            if self.stage is Stage.TRAIN:
+            if self.optimizer is not None:
                 self.optimizer.zero_grad()
                 outputs.loss.mean().backward()
                 self.optimizer.step()
-                # lr_scheduler.step()
+
+                if self.scheduler is not None:
+                    self.scheduler.step()
 
             self.run_count += 1
 

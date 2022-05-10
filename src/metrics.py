@@ -38,7 +38,7 @@ class AccuracyMetric(Metric):
     def calculate_and_update(self, targets: torch.Tensor, predictions: torch.Tensor) -> float:
         batch_len = len(targets)
         batch_accuracy = accuracy_score(targets, predictions)
-        # batch_accuracy = np.mean(batch_accuracy)
+        batch_accuracy = np.mean(batch_accuracy)
         self.update(batch_accuracy, batch_len)
         return batch_accuracy
 

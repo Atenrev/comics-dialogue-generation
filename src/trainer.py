@@ -3,7 +3,7 @@ import logging
 import torch
 import numpy as np
 
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 from torch.utils.data import DataLoader
 from transformers.optimization import Adafactor
 
@@ -17,6 +17,9 @@ class Trainer:
 
     def __init__(self,
                  model: torch.nn.Module,
+                 train_dataloader: DataLoader[Any],
+                 val_dataloader: DataLoader[Any],
+                 test_dataloader: DataLoader[Any],
                  device: torch.device,
                  config: Any,
                  checkpoint: Optional[dict] = None,
@@ -31,17 +34,21 @@ class Trainer:
             checkpoint: The checkpoint to load the optimizer and model from.
             """
         self.model = model
+        self.train_dataloader = train_dataloader
+        self.val_dataloader = val_dataloader
+        self.test_dataloader = test_dataloader
         self.device = device
         self.config = config
 
         # Optimizer
-        self.optimizer = self._get_optimizer(config.optimizer)
+        self.optimizer, self.scheduler = self._get_optimizer_and_scheduler(
+            config.optimizer)
 
         if checkpoint is not None:
             logging.info(f"Loaded checkpoint. Epoch: {checkpoint['epoch']}")
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
-    def _get_optimizer(self, config: Any) -> torch.optim.Optimizer:
+    def _get_optimizer_and_scheduler(self, config: Any) -> Tuple[torch.optim.Optimizer, Optional[torch.optim.lr_scheduler.LambdaLR]]:
         """
         Get the optimizer for the model.
 
@@ -49,8 +56,10 @@ class Trainer:
             config: The optimizer configuration.
 
         Returns:
-            The optimizer.
+            The optimizer and scheduler.
         """
+        scheduler = None
+
         if config.type == "adam":
             optimizer = torch.optim.Adam(
                 self.model.parameters(),
@@ -71,10 +80,33 @@ class Trainer:
                 clip_threshold=1.0,
                 lr=None
             )
+        elif config.type == "adamw":
+            from transformers.optimization import AdamW, get_linear_schedule_with_warmup
+            batch_per_epoch = len(self.train_dataloader)
+            t_total = batch_per_epoch // config.gradient_accumulation_steps * self.config.epochs
+            warmup_ratio = config.warmup_ratio
+            warmup_iters = int(t_total * warmup_ratio)
+
+            no_decay = ["bias", "LayerNorm.weight"]
+            optimizer_grouped_parameters = [
+                {
+                    "params": [p for n, p in self.model.named_parameters() if not any(nd in n for nd in no_decay)],
+                    "weight_decay": config.weight_decay,
+                },
+                {
+                    "params": [p for n, p in self.model.named_parameters() if any(nd in n for nd in no_decay)],
+                    "weight_decay": 0.0,
+                },
+            ]
+
+            optimizer = AdamW(optimizer_grouped_parameters,
+                              lr=config.lr, eps=config.adam_eps)
+            scheduler = get_linear_schedule_with_warmup(
+                optimizer, warmup_iters, t_total)
         else:
             raise Exception("Optimizer not set")
 
-        return optimizer
+        return optimizer, scheduler
 
     def run_epoch(self, epoch_id: int) -> None:
         """
@@ -104,7 +136,7 @@ class Trainer:
             self.tracker.add_epoch_metric(
                 metric.name, metric.average, epoch_id)
 
-    def eval(self, test_dataloader: DataLoader[Any], folds: int = 10) -> None:
+    def eval(self, folds: int = 10) -> None:
         """
         Evaluate the model on the given dataloader for the given number of folds.
         Save the results to report_path.
@@ -113,7 +145,8 @@ class Trainer:
             test_dataloader: The dataloader on which to evaluate the model.
             folds: The number of folds to evaluate the model on.
         """
-        self.test_runner = Runner(self.model, test_dataloader, self.device)
+        self.test_runner = Runner(
+            self.model, self.test_dataloader, self.device)
 
         logging.info(
             f"Evaluating model. Running {folds} folds on test dataset.")
@@ -155,8 +188,6 @@ class Trainer:
         print(report)
 
     def train(self,
-              train_dataloader: DataLoader[Any],
-              val_dataloader: DataLoader[Any],
               num_epochs: int) -> None:
         """
         Train the model for num_epochs epochs on the given dataloaders.
@@ -167,12 +198,13 @@ class Trainer:
             num_epochs: The number of epochs to train for.
         """
         self.train_runner = Runner(
-            self.model, train_dataloader, self.device, self.optimizer)
-        self.val_runner = Runner(self.model, val_dataloader, self.device)
+            self.model, self.train_dataloader, self.device, 
+            self.optimizer, self.scheduler)
+        self.val_runner = Runner(self.model, self.val_dataloader, self.device)
 
         self.tracker = TensorboardExperiment(log_path=self.config.runs_path)
 
-        best_val_value = 0
+        best_val_value = float("inf")
 
         for epoch in range(num_epochs):
             print(f'\n\n ---- RUNNING EPOCH {epoch + 1}/{num_epochs} ----\n')

@@ -53,17 +53,17 @@ class ComicsOcrOnlyDataset(BaseDataset):
         answers = self.tokenizer(answers, return_tensors="pt", truncation=True,
                                  max_length=self.config.answer_max_tokens, padding="max_length").input_ids
 
-        targets = torch.zeros(3)
-        targets[sample["correct_answer"]] = 1.0
+        target = torch.zeros(3)
+        target[sample["correct_answer"]] = 1.0
 
         permutation = torch.randperm(3)
         answers = answers[permutation]
-        targets = targets[permutation]
+        target = target[permutation]
 
         return Sample(str(idx), {
             "context": context,
             "answers": answers,
-            "targets": targets
+            "target":  torch.argmax(target, dim=0)
         })
 
 
@@ -78,13 +78,13 @@ def create_dataloader(
     assert not inference, "This dataset cannot be used for inference."
 
     train_df = pd.read_csv(
-        f"{dataset_path}/text_cloze_train_{config.mode}.csv", ',')
+        f"{dataset_path}/text_cloze_train_{config.mode}.csv", delimiter=',')
     train_df = train_df.fillna("")
     dev_df = pd.read_csv(
-        f"{dataset_path}/text_cloze_dev_{config.mode}.csv", ',')
+        f"{dataset_path}/text_cloze_dev_{config.mode}.csv", delimiter=',')
     dev_df = dev_df.fillna("")
     test_df = pd.read_csv(
-        f"{dataset_path}/text_cloze_test_{config.mode}.csv", ',')
+        f"{dataset_path}/text_cloze_test_{config.mode}.csv", delimiter=',')
     test_df = test_df.fillna("")
 
     train_dataset = ComicsOcrOnlyDataset(

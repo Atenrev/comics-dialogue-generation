@@ -1,8 +1,8 @@
 import torch
 from typing import Any
 from torch import nn
-from transformers.modeling_outputs import MultipleChoiceModelOutput
 
+from src.common.model_outputs import TextClozeModelOutput
 from src.modules.encoders import ImageTextT5EncoderModule
 from src.modules.poolers import MeanPooler
 from src.models.base_model import BaseModel
@@ -10,8 +10,8 @@ from src.models.base_model import BaseModel
 
 class TextClozeImageTextT5Model(BaseModel):
 
-    def __init__(self, config: Any) -> None:
-        super(TextClozeImageTextT5Model, self).__init__(config)
+    def __init__(self, config: Any, device: torch.device) -> None:
+        super(TextClozeImageTextT5Model, self).__init__(config, device)
         self.num_labels = config.answer_candidates
         self.loss_function = nn.CrossEntropyLoss()
         self.images_pooler = MeanPooler(config)
@@ -27,14 +27,14 @@ class TextClozeImageTextT5Model(BaseModel):
         context_dialogues: torch.Tensor,
         images: torch.Tensor,
         answer_dialogues: torch.Tensor,
-        targets: torch.Tensor
-    ) -> MultipleChoiceModelOutput:
+        target: torch.Tensor
+    ) -> TextClozeModelOutput:
         """
         Args:
             dialogues: [batch_size, max_dialogues, max_dialogue_length]
             images: [batch_size, max_panels, 197, 768]
             answers: [batch_size, max_dialogues, max_dialogue_length]
-            targets: [batch_size]
+            target: [batch_size]
 
         Returns:
             loss: [batch_size]
@@ -53,12 +53,13 @@ class TextClozeImageTextT5Model(BaseModel):
         context_encoding_outputs = self.encoder(dialogues_joint, images)
         context_encoding_outputs = self.dropout(context_encoding_outputs)
         logits = self.scores_fc(context_encoding_outputs)
+
         loss = None
 
-        if targets is not None:
-                loss = self.loss_function(logits, targets)
+        if target is not None:
+                loss = self.loss_function(logits, target)
 
-        return MultipleChoiceModelOutput(
+        return TextClozeModelOutput(
             loss=loss,
             logits=logits,
         )

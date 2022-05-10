@@ -4,15 +4,12 @@ import numpy as np
 import pandas as pd
 import h5py as h5
 
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from typing import Any, Tuple
 from transformers import PreTrainedTokenizer
 
-from src.common.sample import Sample
-from src.datasets.base_dataset import BaseDataset
 
-
-class TextClozeImageTextVLT5(BaseDataset):
+class TextClozeImageTextVLT5(Dataset[Any]):
     def __init__(self,
                  data: pd.DataFrame,
                  features_h5: h5.File,
@@ -20,7 +17,8 @@ class TextClozeImageTextVLT5(BaseDataset):
                  device: torch.device,
                  config: Any
                  ):
-        super().__init__(device, config)
+        self.device = device
+        self.config = config
         self.data = data
         self.tokenizer = tokenizer
         self.features_h5 = features_h5
@@ -44,7 +42,7 @@ class TextClozeImageTextVLT5(BaseDataset):
         np.testing.assert_array_less(-boxes, 0+1e-5)
         return boxes
 
-    def getitem(self, idx: int) -> Sample:
+    def __getitem__(self, idx: int) -> dict:
         out_dict = {}
         out_dict['args'] = self.config
 
@@ -141,7 +139,7 @@ class TextClozeImageTextVLT5(BaseDataset):
         out_dict['target_ids'] = torch.LongTensor(target_ids)
         out_dict['target_length'] = len(target_ids)
 
-        return Sample(str(idx), out_dict)
+        return out_dict
 
     def collate_fn(self, batch):
         batch_entry = {}
@@ -229,18 +227,24 @@ def create_dataloader(
         batch_size=batch_size,
         shuffle=True,
         num_workers=0,
+        pin_memory=True, 
+        collate_fn=train_dataset.collate_fn
     )
     val_dataloader = DataLoader(
         dataset=val_dataset,
         batch_size=batch_size,
         shuffle=True,
         num_workers=0,
+        pin_memory=True, 
+        collate_fn=val_dataset.collate_fn
     )
     test_dataloader = DataLoader(
         dataset=test_dataset,
         batch_size=batch_size,
         shuffle=True,
         num_workers=0,
+        pin_memory=True, 
+        collate_fn=test_dataset.collate_fn
     )
 
     return train_dataloader, val_dataloader, test_dataloader

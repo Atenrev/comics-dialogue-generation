@@ -1,6 +1,11 @@
-epochs: 50
+epochs: 10
 runs_path: "./runs/"
 report_path: "./"
 
 optimizer:
-  type: "adafactor"
+  type: "adamw"
+  warmup_ratio: 0.05
+  weight_decay: 0.01
+  gradient_accumulation_steps: 1
+  adam_eps: 0.000001
+  lr: 0.00001

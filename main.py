@@ -88,7 +88,7 @@ def main(args: argparse.Namespace) -> None:
     # Model loading
     ModelClass = getattr(importlib.import_module(
         f"src.models.{args.model}"), model_config.classname)
-    model = ModelClass(model_config).to(device)
+    model = ModelClass(model_config, device).to(device)
 
     # Load model checkpoint
     checkpoint = None
@@ -129,18 +129,20 @@ def main(args: argparse.Namespace) -> None:
             dataset_kwargs=dataset_kwargs
         )
 
-        trainer = Trainer(model, device, trainer_config, checkpoint)
+        trainer = Trainer(model, train_dataloader, val_dataloader,
+                          test_dataloader, device, trainer_config, checkpoint)
 
         if args.mode == "train":
-            trainer.train(train_dataloader, val_dataloader,
-                          trainer_config.epochs)
+            trainer.train(
+                trainer_config.epochs)
         elif args.mode == "eval":
             assert checkpoint is not None, "ERROR: No checkpoint provided."
-            trainer.eval(test_dataloader)
+            trainer.eval()
         else:
-            raise
+            raise ValueError(
+                f"Unknown mode: {args.mode}. Please select one of the following: train, eval, inference")
 
-    elif args.mode == "inference":
+    else:
         # DataLoaders
         create_dataloader = getattr(importlib.import_module(
             f"src.datasets.{dataset_config.name}"), "create_dataloader")

@@ -82,18 +82,18 @@ class ComicsImageTextDataset(BaseDataset):
                                  truncation=True, padding="max_length",
                                  max_length=self.config.answer_max_tokens).input_ids
 
-        targets = torch.zeros(3)
-        targets[sample["correct_answer"]] = 1.0
+        target = torch.zeros(3)
+        target[sample["correct_answer"]] = 1.0
 
         permutation = torch.randperm(3)
         answers = answers[permutation]
-        targets = targets[permutation]
+        target = target[permutation]
 
         return Sample(str(idx), {
             "context_dialogues": context_text,
             "images": panel_features,
             "answer_dialogues": answers,
-            "targets": targets
+            "target": torch.argmax(target, dim=0)
         })
 
 

@@ -420,6 +420,10 @@ class VLT5(T5ForConditionalGeneration):
         original_keys = list(state_dict.keys())
 
         for key in original_keys:
+            if key == "vis_encoder.visual_embedding.img_order_embedding.weight":
+                state_dict.pop(key)
+                continue
+
             if key.startswith("vis_encoder."):
                 new_key = 'encoder.' + key[len("vis_encoder."):]
                 state_dict[new_key] = state_dict.pop(key)

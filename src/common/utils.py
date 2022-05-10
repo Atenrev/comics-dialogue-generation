@@ -52,5 +52,5 @@ def generate_experiment_name():
     # Load configs from registry
     model_config = Registry.get("model_config")
     dataset_config = Registry.get("dataset_config")
-    experiment_name = f"{model_config.classname}_{dataset_config.name}_{str(uuid.uuid4())}"
+    experiment_name = f"{model_config.classname}_{dataset_config.name}_{str(uuid.uuid4()).split('-')[0]}"
     return experiment_name
