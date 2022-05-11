@@ -103,6 +103,7 @@ ENV/
 # other
 .vscode
 pretrained_weights/
+/reports/
 data/
 inference_output/
 comics.slurm

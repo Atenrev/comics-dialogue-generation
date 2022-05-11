@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 from transformers.optimization import Adafactor
 
 from src.common.registry import Registry
+from src.common.utils import generate_experiment_name
 from src.runner import Runner
 from src.trackers.tensorboard_tracker import TensorboardExperiment
 from src.trackers.tracker import Stage
@@ -136,56 +137,53 @@ class Trainer:
             self.tracker.add_epoch_metric(
                 metric.name, metric.average, epoch_id)
 
-    def eval(self, folds: int = 10) -> None:
+    def eval(self) -> None:
         """
         Evaluate the model on the given dataloader for the given number of folds.
         Save the results to report_path.
-
-        Args:   
-            test_dataloader: The dataloader on which to evaluate the model.
-            folds: The number of folds to evaluate the model on.
         """
+        import json
         self.test_runner = Runner(
             self.model, self.test_dataloader, self.device)
 
-        logging.info(
-            f"Evaluating model. Running {folds} folds on test dataset.")
-        final_metrics = {
-            "loss": [],
+        logging.info("Evaluating model.")
+
+        with torch.no_grad():
+            self.test_runner.run_epoch()
+
+        results = {
+            "loss": self.test_runner.average_loss,
+            "metrics": [],
         }
 
-        for metric_name in Registry.get("model_config").metrics:
-            final_metrics[metric_name] = []
+        for metric in self.test_runner.metrics:
+            results["metrics"] += [{
+                "name": metric.name,
+                "value": metric.average,
+            }]
 
-        for i in range(folds):
-            logging.info(f"Running fold {i}...")
+        predictions = self.test_runner.predictions_info
+        correct_predictions = []
+        incorrect_predictions = []
 
-            with torch.no_grad():
-                self.test_runner.run_epoch()
+        for sample_id in predictions:
+            prediction = predictions[sample_id]["prediction"]
+            target = predictions[sample_id]["target"]
 
-            final_metrics["loss"].append(self.test_runner.average_loss)
+            if prediction == target:
+                correct_predictions.append(sample_id)
+            else:
+                incorrect_predictions.append(sample_id)
 
-            for metric in self.test_runner.metrics:
-                final_metrics[metric.name].append(metric.average)
+        results["correct_predictions"] = correct_predictions
+        results["incorrect_predictions"] = incorrect_predictions
 
-            self.test_runner.reset()
+        experiment_name = generate_experiment_name()
 
-        report = "Results:\n"
-
-        for metric in final_metrics:
-            report += "{}: {:.4f} (±{:.4f})\n".format(
-                metric.capitalize(),
-                np.mean(final_metrics[metric])*100,
-                np.std(final_metrics[metric])*100
-            )
-
-        with open(
-                os.path.join(
-                    self.config.report_path, "eval_report.txt"),
+        with open(os.path.join(
+                self.config.report_path, f"{experiment_name}_report"),
                 "w", encoding="utf-8") as f:
-            f.write(report)
-
-        print(report)
+            json.dump(results, f)
 
     def train(self,
               num_epochs: int) -> None:
@@ -193,16 +191,16 @@ class Trainer:
         Train the model for num_epochs epochs on the given dataloaders.
 
         Args:
-            train_dataloader: The dataloader for training.
-            val_dataloader: The dataloader for validation.
             num_epochs: The number of epochs to train for.
         """
         self.train_runner = Runner(
-            self.model, self.train_dataloader, self.device, 
+            self.model, self.train_dataloader, self.device,
             self.optimizer, self.scheduler)
         self.val_runner = Runner(self.model, self.val_dataloader, self.device)
 
-        self.tracker = TensorboardExperiment(log_path=self.config.runs_path)
+        experiment_name = generate_experiment_name()
+        self.tracker = TensorboardExperiment(log_path=self.config.runs_path,
+                                             experiment_name=experiment_name)
 
         best_val_value = float("inf")
 

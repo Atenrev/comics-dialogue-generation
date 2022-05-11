@@ -103,13 +103,13 @@ def create_dataloader(
     val_dataloader = DataLoader(
         dataset=val_dataset,
         batch_size=batch_size,
-        shuffle=True,
+        shuffle=False,
         num_workers=0,
     )
     test_dataloader = DataLoader(
         dataset=test_dataset,
         batch_size=batch_size,
-        shuffle=True,
+        shuffle=False,
         num_workers=0,
     )
 

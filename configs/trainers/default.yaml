@@ -1,6 +1,6 @@
 epochs: 10
 runs_path: "./runs/"
-report_path: "./"
+report_path: "./reports/"
 
 optimizer:
   type: "adamw"

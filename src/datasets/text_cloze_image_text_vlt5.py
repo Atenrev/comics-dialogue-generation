@@ -44,6 +44,7 @@ class TextClozeImageTextVLT5(Dataset[Any]):
 
     def __getitem__(self, idx: int) -> dict:
         out_dict = {}
+        out_dict["sample_id"] = str(idx)
         out_dict['args'] = self.config
 
         sample = self.data.iloc[idx]
@@ -143,6 +144,7 @@ class TextClozeImageTextVLT5(Dataset[Any]):
 
     def collate_fn(self, batch):
         batch_entry = {}
+        batch_entry['sample_id'] = [entry['sample_id'] for entry in batch]
 
         B = len(batch)
         V_L = batch[0]['boxes'].size(1)
@@ -156,7 +158,7 @@ class TextClozeImageTextVLT5(Dataset[Any]):
 
         boxes = torch.zeros(B, 4, V_L, 4, dtype=torch.float)
         vis_feats = torch.zeros(B, 4, V_L, feat_dim, dtype=torch.float)
-        target = torch.ones(B, 1, dtype=torch.long) * \
+        target = torch.ones(B, dtype=torch.long) * \
             self.tokenizer.pad_token_id
         target_ids = torch.ones(
             B, T_W_L, dtype=torch.long) * self.tokenizer.pad_token_id
@@ -233,7 +235,7 @@ def create_dataloader(
     val_dataloader = DataLoader(
         dataset=val_dataset,
         batch_size=batch_size,
-        shuffle=True,
+        shuffle=False,
         num_workers=0,
         pin_memory=True, 
         collate_fn=val_dataset.collate_fn
@@ -241,7 +243,7 @@ def create_dataloader(
     test_dataloader = DataLoader(
         dataset=test_dataset,
         batch_size=batch_size,
-        shuffle=True,
+        shuffle=False,
         num_workers=0,
         pin_memory=True, 
         collate_fn=test_dataset.collate_fn

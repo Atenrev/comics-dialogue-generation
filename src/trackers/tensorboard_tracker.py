@@ -18,8 +18,7 @@ from src.common.utils import create_experiment_dir, generate_experiment_name
 
 
 class TensorboardExperiment:
-    def __init__(self, log_path: str, create: bool = True):
-        experiment_name = generate_experiment_name()
+    def __init__(self, log_path: str, experiment_name: str, create: bool = True):
         log_dir, self.models_dir = create_experiment_dir(
             root=log_path, experiment_name=experiment_name)
         self.stage = Stage.TRAIN

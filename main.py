@@ -17,17 +17,17 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default="text_cloze_image_text_vlt5",
                         help='Model to run')
-    parser.add_argument('--dataset_config', type=str, default="text_cloze_image_text_vlt5_easy",
+    parser.add_argument('--dataset_config', type=str, default="text_cloze_image_text_vlt5_hard",
                         help='Dataset config to use')
     parser.add_argument('--trainer_config', type=str, default="default",
                         help='Trainer params to use')
     parser.add_argument('--dataset_dir', type=str, default="datasets/COMICS/",
                         help='Dataset directory path')
-    parser.add_argument('--mode', type=str, default="train",
+    parser.add_argument('--mode', type=str, default="eval",
                         help='Execution mode ("training", "eval" or "inference")')
-    parser.add_argument('--load_checkpoint', type=str, default=None,
+    parser.add_argument('--load_checkpoint', type=str, default="./runs/24-TextClozeImageTextVLT5Model_text_cloze_image_text_vlt5_e575d6da/models/epoch_10.pt",
                         help='Path to model checkpoint')
-    parser.add_argument('--batch_size', type=int, default=4,
+    parser.add_argument('--batch_size', type=int, default=16,
                         help='Batch size')
     parser.add_argument('--seed', type=int, default=42, help='Seed to use')
 

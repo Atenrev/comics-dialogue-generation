@@ -1,33 +1,36 @@
 """
 Some functions from https://github.com/ArjanCodes/2021-data-science-refactor/blob/main/after/ds/utils.py
 """
-import json
 import pathlib
-import uuid
+import datetime
 
-from typing import List
+from typing import List, Tuple
 
 from src.common.registry import Registry
 
 
-def create_experiment_dir(root: str, experiment_name: str, parents: bool = True) -> str:
+def create_experiment_dir(root: str, experiment_name: str,
+                          parents: bool = True) -> Tuple[str, str]:
     root_path = pathlib.Path(root).resolve()
-    child = (
-        create_from_missing(root_path, experiment_name)
-        if not root_path.exists()
-        else create_from_existing(root_path, experiment_name)
-    )
+    # child = (
+    #     create_from_missing(root_path, experiment_name)
+    #     if not root_path.exists()
+    #     else create_from_existing(root_path, experiment_name)
+    # )
+    child = root_path / experiment_name
     child.mkdir(parents=parents)
     models_path = child / "models"
     models_path.mkdir()
     return child.as_posix(), models_path.as_posix()
 
 
-def create_from_missing(root: pathlib.Path, experiment_name: str = "") -> pathlib.Path:
+def create_from_missing(root: pathlib.Path,
+                        experiment_name: str = "") -> pathlib.Path:
     return root / f"0-{experiment_name}"
 
 
-def create_from_existing(root: pathlib.Path, experiment_name: str = "") -> pathlib.Path:
+def create_from_existing(root: pathlib.Path,
+                         experiment_name: str = "") -> pathlib.Path:
     children = [
         int(c.name.split("-")[0]) for c in root.glob("*")
         if (c.is_dir() and c.name.split("-")[0].isnumeric())
@@ -49,8 +52,8 @@ def increment_experiment_number(children: List[int]) -> str:
 
 
 def generate_experiment_name():
-    # Load configs from registry
+    now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
     model_config = Registry.get("model_config")
     dataset_config = Registry.get("dataset_config")
-    experiment_name = f"{model_config.classname}_{dataset_config.name}_{str(uuid.uuid4()).split('-')[0]}"
+    experiment_name = f"{model_config.classname}_{dataset_config.name}_{now}"
     return experiment_name

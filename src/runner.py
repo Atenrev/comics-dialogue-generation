@@ -37,6 +37,9 @@ class Runner:
         self.device = device
         self.stage = Stage.TRAIN if optimizer is not None else Stage.VAL
 
+        if self.stage is Stage.VAL:
+            self.predictions_info = {}
+
         # Metrics
         self.loss_metric = LossMetric()
         self.metrics = build_metrics(Registry.get("model_config").metrics)
@@ -52,7 +55,7 @@ class Runner:
         Args:
             tracker: The ExperimentTracker to use.
         """
-        self.model.train(self.stage is Stage.TRAIN)            
+        self.model.train(self.stage is Stage.TRAIN)
 
         for local_batch in tqdm(self.data_loader):
             batch = local_batch["data"] if "data" in local_batch else local_batch
@@ -66,12 +69,20 @@ class Runner:
 
             if tracker is not None:
                 tracker.add_batch_metric("loss", loss, self.run_count)
-            
-            for metric in self.metrics:
-                val = metric.calculate_and_update(targets, predictions)     
 
-                if tracker is not None:       
+            for metric in self.metrics:
+                val = metric.calculate_and_update(targets, predictions)
+
+                if tracker is not None:
                     tracker.add_batch_metric(metric.name, val, self.run_count)
+
+            if self.stage is Stage.VAL:
+                for sample_id, prediction, target in zip(
+                        batch["sample_id"], predictions, targets):
+                    self.predictions_info[sample_id] = {
+                        "prediction": prediction,
+                        "target": target,
+                    }
             
             if self.optimizer is not None:
                 self.optimizer.zero_grad()
