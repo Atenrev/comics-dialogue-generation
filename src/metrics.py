@@ -23,7 +23,7 @@ class Metric:
         self.num_updates += batch_size
         self.average = self.running_total / self.num_updates
 
-    def calculate_and_update(self, targets: torch.Tensor, predictions: torch.Tensor) -> float:
+    def calculate_and_update(self, targets: np.ndarray, predictions: np.ndarray) -> float:
         raise NotImplementedError
 
 
@@ -35,7 +35,7 @@ class LossMetric(Metric):
 class AccuracyMetric(Metric):
     name: str = "accuracy"
 
-    def calculate_and_update(self, targets: torch.Tensor, predictions: torch.Tensor) -> float:
+    def calculate_and_update(self, targets: np.ndarray, predictions: np.ndarray) -> float:
         batch_len = len(targets)
         batch_accuracy = accuracy_score(targets, predictions)
         batch_accuracy = np.mean(batch_accuracy)
@@ -45,6 +45,9 @@ class AccuracyMetric(Metric):
 
 def build_metrics(metrics_names: List[str]) -> List[Metric]:
     metrics = []
+
+    if metrics_names is None:
+        return metrics
 
     for metric_name in metrics_names:
         if metric_name == "accuracy":

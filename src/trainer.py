@@ -181,7 +181,7 @@ class Trainer:
         experiment_name = generate_experiment_name()
 
         with open(os.path.join(
-                self.config.report_path, f"{experiment_name}_report"),
+                self.config.report_path, f"{experiment_name}_report.json"),
                 "w", encoding="utf-8") as f:
             json.dump(results, f)
 
