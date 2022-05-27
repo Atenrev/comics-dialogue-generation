@@ -121,12 +121,12 @@ class TextClozeImageTextVLT5(Dataset[Any]):
         out_dict['input_ids'] = torch.LongTensor(input_ids)
         out_dict['input_length'] = len(input_ids)
 
-        label = sample[f"answer_candidate_{sample['correct_answer']}_text"]
+        target_text = sample[f"answer_candidate_{sample['correct_answer']}_text"]
         target_ids = self.tokenizer.encode(
-            str(label), max_length=self.config.gen_max_length, truncation=True)
+            str(target_text), max_length=self.config.gen_max_length, truncation=True)
 
         assert len(target_ids) <= self.config.gen_max_length, len(target_ids)
-        out_dict['label'] = label
+        out_dict['target_text'] = target_text
         out_dict['target'] = torch.LongTensor(target_ids)
         out_dict['target_length'] = len(target_ids)
 
@@ -150,7 +150,7 @@ class TextClozeImageTextVLT5(Dataset[Any]):
         vis_feats = torch.zeros(B, 4, V_L, feat_dim, dtype=torch.float)
         target = torch.ones(
             B, T_W_L, dtype=torch.long) * self.tokenizer.pad_token_id
-        labels = []
+        target_text = []
 
         input_texts = []
 
@@ -164,7 +164,7 @@ class TextClozeImageTextVLT5(Dataset[Any]):
 
             input_texts.append(entry['input_text'])
 
-            labels.append(entry['label'])
+            target_text.append(entry['target_text'])
 
         batch_entry['input_ids'] = input_ids
         word_mask = target != self.tokenizer.pad_token_id
@@ -174,7 +174,7 @@ class TextClozeImageTextVLT5(Dataset[Any]):
         batch_entry['boxes'] = boxes
         batch_entry['vis_feats'] = vis_feats
         batch_entry['input_text'] = input_texts
-        batch_entry['labels'] = labels
+        batch_entry['target_text'] = target_text
         batch_entry['task'] = 'text cloze'
 
         return batch_entry

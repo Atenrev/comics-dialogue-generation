@@ -20,3 +20,6 @@ losses: "lm,obj,attr,feat"
 
 share_vis_lang_layer_norm: False
 classifier: False
+
+metrics:
+- bleu
