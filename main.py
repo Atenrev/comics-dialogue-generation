@@ -89,6 +89,9 @@ def main(args: argparse.Namespace) -> None:
         f"src.models.{args.model}"), model_config.classname)
     model = ModelClass(model_config, device).to(device)
 
+    if tokenizer:
+        model.tokenizer = tokenizer
+
     # Load model checkpoint
     checkpoint = None
 
@@ -109,7 +112,7 @@ def main(args: argparse.Namespace) -> None:
         # model.load_state_dict(checkpoint["model_state_dict"], strict=False)
         model.load_checkpoint(checkpoint["model_state_dict"])
 
-    if torch.cuda.device_count() > 1:
+    if torch.cuda.device_count() > 1 or True:
         model = torch.nn.DataParallel(model)
 
     if args.mode != "inference":

@@ -1,6 +1,7 @@
-classname: "TextClozeImageTextVLT5Model"
+classname: "DialogueGenerationVLT5Model"
 backbone: "t5-base"
 tokenizer: "vlt5"
+pretrained_weights: './pretrained_weights/vlt5_epoch30.pth'
 
 feat_dim: 2048
 pos_dim: 4
@@ -23,3 +24,4 @@ classifier: False
 
 metrics:
 - bleu
+- meteor

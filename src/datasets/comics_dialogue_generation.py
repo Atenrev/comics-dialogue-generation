@@ -9,7 +9,7 @@ from typing import Any, Tuple
 from transformers import PreTrainedTokenizer
 
 
-class TextClozeImageTextVLT5(Dataset[Any]):
+class ComicsDialogueGeneration(Dataset[Any]):
     def __init__(self,
                  data: pd.DataFrame,
                  features_h5: h5.File,
@@ -24,7 +24,7 @@ class TextClozeImageTextVLT5(Dataset[Any]):
         self.features_h5 = features_h5
 
     def __len__(self):
-        return 100#len(self.data)
+        return len(self.data)
 
     def get_normalized_boxes(self, image_ds) -> torch.Tensor:
         """
@@ -203,11 +203,11 @@ def create_dataloader(
     feats_h5_path = os.path.join(dataset_path, config.panel_features_path)
     feats_h5 = h5.File(feats_h5_path, 'r')
 
-    train_dataset = TextClozeImageTextVLT5(
+    train_dataset = ComicsDialogueGeneration(
         train_df, feats_h5, dataset_kwargs["tokenizer"], device, config)
-    val_dataset = TextClozeImageTextVLT5(
+    val_dataset = ComicsDialogueGeneration(
         dev_df, feats_h5, dataset_kwargs["tokenizer"], device, config)
-    test_dataset = TextClozeImageTextVLT5(
+    test_dataset = ComicsDialogueGeneration(
         test_df, feats_h5, dataset_kwargs["tokenizer"], device, config)
 
     train_dataloader = DataLoader(

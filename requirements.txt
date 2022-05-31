@@ -9,3 +9,4 @@ munch
 wandb
 sentencepiece
 sacreblue
+nltk

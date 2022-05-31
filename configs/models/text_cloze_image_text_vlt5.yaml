@@ -1,5 +1,6 @@
 classname: "TextClozeImageTextVLT5Model"
 backbone: "t5-base"
+pretrained_weights: './pretrained_weights/vlt5_epoch30.pth'
 tokenizer: "vlt5"
 
 feat_dim: 2048

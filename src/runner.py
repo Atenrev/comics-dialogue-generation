@@ -73,7 +73,11 @@ class Runner:
             for metric in self.metrics:
                 if metric.inpyt_type == "str":
                     target_texts = batch["target_text"]
-                    predictions_texts = outputs.prediction_text
+                    if isinstance(self.model, torch.nn.DataParallel):
+                        tokenizer = self.model.module.tokenizer
+                    else:
+                        tokenizer = self.model.tokenizer
+                    predictions_texts = tokenizer.batch_decode(predictions, skip_special_tokens=True)
                     val = metric.calculate_and_update(target_texts, predictions_texts)
                 else:
                     val = metric.calculate_and_update(targets, predictions)
