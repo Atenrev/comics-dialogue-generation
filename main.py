@@ -15,25 +15,24 @@ from src.tokenizers.vlt5_tokenizers import VLT5TokenizerFast
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default="text_cloze_image_text_vlt5",
+    parser.add_argument('--model', type=str, default="dialogue_generation_vlt5",
                         help='Model to run')
-    parser.add_argument('--dataset_config', type=str, default="text_cloze_image_text_vlt5_hard",
+    parser.add_argument('--dataset_config', type=str, default="comics_dialogue_generation_easy",
                         help='Dataset config to use')
-    parser.add_argument('--trainer_config', type=str, default="default",
+    parser.add_argument('--trainer_config', type=str, default="vlt5",
                         help='Trainer params to use')
     parser.add_argument('--dataset_dir', type=str, default="datasets/COMICS/",
                         help='Dataset directory path')
-    parser.add_argument('--mode', type=str, default="eval",
+    parser.add_argument('--mode', type=str, default="train",
                         help='Execution mode ("training", "eval" or "inference")')
-    parser.add_argument('--load_checkpoint', type=str, default="./runs/24-TextClozeImageTextVLT5Model_text_cloze_image_text_vlt5_e575d6da/models/epoch_10.pt",
+    parser.add_argument('--load_checkpoint', type=str, default=None,
                         help='Path to model checkpoint')
-    parser.add_argument('--batch_size', type=int, default=16,
+    parser.add_argument('--batch_size', type=int, default=4,
                         help='Batch size')
     parser.add_argument('--seed', type=int, default=42, help='Seed to use')
 
     args = parser.parse_args()
     return args
-
 
 def main(args: argparse.Namespace) -> None:
     logging.basicConfig(
@@ -90,6 +89,9 @@ def main(args: argparse.Namespace) -> None:
         f"src.models.{args.model}"), model_config.classname)
     model = ModelClass(model_config, device).to(device)
 
+    if tokenizer:
+        model.tokenizer = tokenizer
+
     # Load model checkpoint
     checkpoint = None
 
@@ -110,7 +112,7 @@ def main(args: argparse.Namespace) -> None:
         # model.load_state_dict(checkpoint["model_state_dict"], strict=False)
         model.load_checkpoint(checkpoint["model_state_dict"])
 
-    if torch.cuda.device_count() > 1:
+    if torch.cuda.device_count() > 1 or True:
         model = torch.nn.DataParallel(model)
 
     if args.mode != "inference":

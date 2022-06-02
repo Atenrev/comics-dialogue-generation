@@ -8,3 +8,5 @@ yaml
 munch
 wandb
 sentencepiece
+sacreblue
+nltk

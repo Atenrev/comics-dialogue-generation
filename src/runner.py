@@ -71,7 +71,16 @@ class Runner:
                 tracker.add_batch_metric("loss", loss, self.run_count)
 
             for metric in self.metrics:
-                val = metric.calculate_and_update(targets, predictions)
+                if metric.inpyt_type == "str":
+                    target_texts = batch["target_text"]
+                    if isinstance(self.model, torch.nn.DataParallel):
+                        tokenizer = self.model.module.tokenizer
+                    else:
+                        tokenizer = self.model.tokenizer
+                    predictions_texts = tokenizer.batch_decode(predictions, skip_special_tokens=True)
+                    val = metric.calculate_and_update(target_texts, predictions_texts)
+                else:
+                    val = metric.calculate_and_update(targets, predictions)
 
                 if tracker is not None:
                     tracker.add_batch_metric(metric.name, val, self.run_count)
