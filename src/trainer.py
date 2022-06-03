@@ -162,21 +162,21 @@ class Trainer:
                 "value": metric.average,
             }]
 
-        predictions = self.test_runner.predictions_info
-        correct_predictions = []
-        incorrect_predictions = []
+        # predictions = self.test_runner.predictions_info
+        # correct_predictions = []
+        # incorrect_predictions = []
 
-        for sample_id in predictions:
-            prediction = predictions[sample_id]["prediction"]
-            target = predictions[sample_id]["target"]
+        # for sample_id in predictions:
+        #     prediction = predictions[sample_id]["prediction"]
+        #     target = predictions[sample_id]["target"]
 
-            if prediction == target:
-                correct_predictions.append(sample_id)
-            else:
-                incorrect_predictions.append(sample_id)
+        #     if prediction == target:
+        #         correct_predictions.append(sample_id)
+        #     else:
+        #         incorrect_predictions.append(sample_id)
 
-        results["correct_predictions"] = correct_predictions
-        results["incorrect_predictions"] = incorrect_predictions
+        # results["correct_predictions"] = correct_predictions
+        # results["incorrect_predictions"] = incorrect_predictions
 
         experiment_name = generate_experiment_name()
 

@@ -37,8 +37,8 @@ class Runner:
         self.device = device
         self.stage = Stage.TRAIN if optimizer is not None else Stage.VAL
 
-        if self.stage is Stage.VAL:
-            self.predictions_info = {}
+        # if self.stage is Stage.VAL:
+        #     self.predictions_info = {}
 
         # Metrics
         self.loss_metric = LossMetric()
@@ -85,13 +85,13 @@ class Runner:
                 if tracker is not None:
                     tracker.add_batch_metric(metric.name, val, self.run_count)
 
-            if self.stage is Stage.VAL:
-                for sample_id, prediction, target in zip(
-                        batch["sample_id"], predictions, targets):
-                    self.predictions_info[sample_id] = {
-                        "prediction": prediction,
-                        "target": target,
-                    }
+            # if self.stage is Stage.VAL:
+            #     for sample_id, prediction, target in zip(
+            #             batch["sample_id"], predictions, targets):
+            #         self.predictions_info[sample_id] = {
+            #             "prediction": prediction,
+            #             "target": target,
+            #         }
             
             if self.optimizer is not None:
                 self.optimizer.zero_grad()
