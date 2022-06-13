@@ -22,24 +22,12 @@ class TextClozeImageTextT5Model(BaseModel):
             config.answer_candidates
         )
 
-    def forward(
-        self,
+    def forward(self,
         context_dialogues: torch.Tensor,
         images: torch.Tensor,
         answer_dialogues: torch.Tensor,
         target: torch.Tensor
     ) -> TextClozeModelOutput:
-        """
-        Args:
-            dialogues: [batch_size, max_dialogues, max_dialogue_length]
-            images: [batch_size, max_panels, 197, 768]
-            answers: [batch_size, max_dialogues, max_dialogue_length]
-            target: [batch_size]
-
-        Returns:
-            loss: [batch_size]
-            logits: [batch_size, num_labels]
-        """
         batch_size = context_dialogues.size(0)
         
         # Images are not to be embedded
@@ -63,3 +51,30 @@ class TextClozeImageTextT5Model(BaseModel):
             loss=loss,
             logits=logits,
         )
+
+
+    def run(
+        self,
+        context_dialogues: torch.Tensor,
+        images: torch.Tensor,
+        answer_dialogues: torch.Tensor,
+        target: torch.Tensor
+    ) -> TextClozeModelOutput:
+        """
+        Args:
+            dialogues: [batch_size, max_dialogues, max_dialogue_length]
+            images: [batch_size, max_panels, 197, 768]
+            answers: [batch_size, max_dialogues, max_dialogue_length]
+            target: [batch_size]
+
+        Returns:
+            loss: [batch_size]
+            logits: [batch_size, num_labels]
+        """
+        return self.forward(
+            context_dialogues,
+            images,
+            answer_dialogues,
+            target
+        )
+        

@@ -15,7 +15,7 @@ class DialogueGenerationVLT5Model(VLT5):
         )
         self.load_checkpoint(pretrained_w)
 
-    def forward(self, *args, **kwargs):
+    def run(self, *args, **kwargs):
         device = self.m_device
         input_ids = kwargs['input_ids'].to(device)
         B = len(input_ids)
@@ -34,7 +34,7 @@ class DialogueGenerationVLT5Model(VLT5):
         obj_order_ids = obj_order_ids.view(1, 1, V_L).expand(
             B, 4, -1).contiguous().view(B, 4*V_L)
         
-        output = super().forward(
+        output = self.forward(
             input_ids=input_ids,
             vis_inputs=(vis_feats, vis_pos, img_order_ids, obj_order_ids),
             labels=lm_labels,
@@ -47,6 +47,12 @@ class DialogueGenerationVLT5Model(VLT5):
             loss = output['loss']
             output['loss'] = loss
 
-        output["prediction"] = torch.argmax(output.logits, dim=2)
+        # output["prediction"] = torch.argmax(output.logits, dim=2)
+        output["prediction"] = self.generate(
+            input_ids=input_ids,
+            vis_inputs=(vis_feats, vis_pos, img_order_ids, obj_order_ids),
+            num_beams=1,
+            max_length=30,
+        )
 
         return output

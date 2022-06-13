@@ -56,3 +56,9 @@ class TextClozeTextOnlyT5HierarchyModel(BaseModel):
             loss=loss,
             logits=logits,
         )
+
+    def run(self,
+            context: torch.Tensor,
+            answers: torch.Tensor,
+            target: torch.Tensor) -> TextClozeModelOutput:
+        return self.forward(context, answers, target)

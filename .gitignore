@@ -114,3 +114,4 @@ runs/
 environment.yml
 experiments.json
 eval_report.txt
+*.png

@@ -9,6 +9,7 @@ from transformers.optimization import Adafactor
 
 from src.common.registry import Registry
 from src.common.utils import generate_experiment_name
+from src.models.base_model import BaseModel
 from src.runner import Runner
 from src.trackers.tensorboard_tracker import TensorboardExperiment
 from src.trackers.tracker import Stage
@@ -17,7 +18,7 @@ from src.trackers.tracker import Stage
 class Trainer:
 
     def __init__(self,
-                 model: torch.nn.Module,
+                 model: BaseModel,
                  train_dataloader: DataLoader[Any],
                  val_dataloader: DataLoader[Any],
                  test_dataloader: DataLoader[Any],

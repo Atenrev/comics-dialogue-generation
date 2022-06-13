@@ -10,3 +10,4 @@ wandb
 sentencepiece
 sacreblue
 nltk
+opencv

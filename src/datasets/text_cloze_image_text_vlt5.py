@@ -9,7 +9,7 @@ from typing import Any, Tuple
 from transformers import PreTrainedTokenizer
 
 
-class TextClozeImageTextVLT5(Dataset[Any]):
+class TextClozeImageTextVLT5Dataset(Dataset[Any]):
     def __init__(self,
                  data: pd.DataFrame,
                  features_h5: h5.File,
@@ -217,11 +217,11 @@ def create_dataloader(
     feats_h5_path = os.path.join(dataset_path, config.panel_features_path)
     feats_h5 = h5.File(feats_h5_path, 'r')
 
-    train_dataset = TextClozeImageTextVLT5(
+    train_dataset = TextClozeImageTextVLT5Dataset(
         train_df, feats_h5, dataset_kwargs["tokenizer"], device, config)
-    val_dataset = TextClozeImageTextVLT5(
+    val_dataset = TextClozeImageTextVLT5Dataset(
         dev_df, feats_h5, dataset_kwargs["tokenizer"], device, config)
-    test_dataset = TextClozeImageTextVLT5(
+    test_dataset = TextClozeImageTextVLT5Dataset(
         test_df, feats_h5, dataset_kwargs["tokenizer"], device, config)
 
     train_dataloader = DataLoader(

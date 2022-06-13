@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 from src.common.registry import Registry
 
 from src.metrics import LossMetric, build_metrics
+from src.models.base_model import BaseModel
 from src.trackers.tracker import ExperimentTracker, Stage
 
 
@@ -14,7 +15,7 @@ class Runner:
 
     def __init__(
         self,
-        model: torch.nn.Module,
+        model: BaseModel,
         data_loader: DataLoader[Any],
         device: torch.device,
         optimizer: Optional[torch.optim.Optimizer] = None,
@@ -59,7 +60,7 @@ class Runner:
 
         for local_batch in tqdm(self.data_loader):
             batch = local_batch["data"] if "data" in local_batch else local_batch
-            outputs = self.model(**batch)
+            outputs = self.model.run(**batch)
             predictions = outputs.prediction.detach().cpu().numpy()
             targets = batch["target"].detach().cpu().numpy()
             loss = outputs.loss.detach().cpu().mean().numpy()

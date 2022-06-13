@@ -1,6 +1,8 @@
 import torch
 
+from abc import abstractmethod
 from typing import Any, OrderedDict
+from transformers.modeling_outputs import BaseModelOutput
 
 
 class BaseModel(torch.nn.Module):
@@ -19,3 +21,7 @@ class BaseModel(torch.nn.Module):
                 state_dict[new_key] = state_dict.pop(key)
 
         self.load_state_dict(state_dict, strict=False)
+
+    @abstractmethod
+    def run(self) -> BaseModelOutput:
+        raise NotImplementedError

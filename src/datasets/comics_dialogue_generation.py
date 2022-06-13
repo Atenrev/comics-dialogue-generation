@@ -9,7 +9,7 @@ from typing import Any, Tuple
 from transformers import PreTrainedTokenizer
 
 
-class ComicsDialogueGeneration(Dataset[Any]):
+class ComicsDialogueGenerationDataset(Dataset[Any]):
     def __init__(self,
                  data: pd.DataFrame,
                  features_h5: h5.File,
@@ -203,11 +203,11 @@ def create_dataloader(
     feats_h5_path = os.path.join(dataset_path, config.panel_features_path)
     feats_h5 = h5.File(feats_h5_path, 'r')
 
-    train_dataset = ComicsDialogueGeneration(
+    train_dataset = ComicsDialogueGenerationDataset(
         train_df, feats_h5, dataset_kwargs["tokenizer"], device, config)
-    val_dataset = ComicsDialogueGeneration(
+    val_dataset = ComicsDialogueGenerationDataset(
         dev_df, feats_h5, dataset_kwargs["tokenizer"], device, config)
-    test_dataset = ComicsDialogueGeneration(
+    test_dataset = ComicsDialogueGenerationDataset(
         test_df, feats_h5, dataset_kwargs["tokenizer"], device, config)
 
     train_dataloader = DataLoader(

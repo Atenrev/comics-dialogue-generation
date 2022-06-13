@@ -23,11 +23,11 @@ def parse_args() -> argparse.Namespace:
                         help='Trainer params to use')
     parser.add_argument('--dataset_dir', type=str, default="datasets/COMICS/",
                         help='Dataset directory path')
-    parser.add_argument('--mode', type=str, default="train",
+    parser.add_argument('--mode', type=str, default="eval",
                         help='Execution mode ("training", "eval" or "inference")')
-    parser.add_argument('--load_checkpoint', type=str, default=None,
+    parser.add_argument('--load_checkpoint', type=str, default="runs/DialogueGenerationVLT5Model_comics_dialogue_generation_2022-06-03_00:19:53/models/epoch_10.pt",
                         help='Path to model checkpoint')
-    parser.add_argument('--batch_size', type=int, default=4,
+    parser.add_argument('--batch_size', type=int, default=16,
                         help='Batch size')
     parser.add_argument('--seed', type=int, default=42, help='Seed to use')
 
@@ -112,7 +112,7 @@ def main(args: argparse.Namespace) -> None:
         # model.load_state_dict(checkpoint["model_state_dict"], strict=False)
         model.load_checkpoint(checkpoint["model_state_dict"])
 
-    if torch.cuda.device_count() > 1 or True:
+    if torch.cuda.device_count() > 1:
         model = torch.nn.DataParallel(model)
 
     if args.mode != "inference":

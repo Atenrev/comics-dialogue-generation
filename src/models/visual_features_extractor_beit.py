@@ -16,3 +16,6 @@ class VisualFeaturesExtractorBeit(BaseModel):
     def forward(self, image: dict) -> torch.Tensor:
         embedding = self.beit(**image)
         return embedding
+
+    def run(self, image: dict) -> torch.Tensor:
+        return self.forward(image)
