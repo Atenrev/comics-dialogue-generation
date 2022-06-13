@@ -35,7 +35,7 @@ def parse_arguments():
                         help='Dataset config to use')
     parser.add_argument('--dataset_dir', type=str, default="datasets/COMICS/",
                         help='Dataset directory path')
-    parser.add_argument('--sample_id', type=int, default=15,
+    parser.add_argument('--sample_id', type=int, default=7,
                         help='Sample id to plot')
 
     return parser.parse_args()
@@ -133,11 +133,18 @@ def main(args) -> None:
         B, 4, -1).contiguous().view(B, 4*V_L)
 
     # prediction_dialogue = model_dialogue.generate(**sample_dialogue)
+    # prediction_dialogue = model_dialogue.generate(
+    #     input_ids=input_ids,
+    #     vis_inputs=(vis_feats, vis_pos, img_order_ids, obj_order_ids),
+    #     num_beams=1,
+    #     max_length=30,
+    # )
     prediction_dialogue = model_dialogue.generate(
         input_ids=input_ids,
         vis_inputs=(vis_feats, vis_pos, img_order_ids, obj_order_ids),
-        num_beams=1,
-        max_length=30,
+        do_sample=True,
+        temperature=0.6,
+        top_p=0.9,
     )
 
     prediction_dialogue = tokenizer.batch_decode(

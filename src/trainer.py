@@ -196,7 +196,8 @@ class Trainer:
         """
         self.train_runner = Runner(
             self.model, self.train_dataloader, self.device,
-            self.optimizer, self.scheduler)
+            self.optimizer, self.scheduler,
+            self.config.optimizer.gradient_accumulation_steps)
         self.val_runner = Runner(self.model, self.val_dataloader, self.device)
 
         experiment_name = generate_experiment_name()

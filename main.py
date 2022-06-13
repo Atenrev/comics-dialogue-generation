@@ -23,11 +23,11 @@ def parse_args() -> argparse.Namespace:
                         help='Trainer params to use')
     parser.add_argument('--dataset_dir', type=str, default="datasets/COMICS/",
                         help='Dataset directory path')
-    parser.add_argument('--mode', type=str, default="eval",
+    parser.add_argument('--mode', type=str, default="train",
                         help='Execution mode ("training", "eval" or "inference")')
-    parser.add_argument('--load_checkpoint', type=str, default="runs/DialogueGenerationVLT5Model_comics_dialogue_generation_2022-06-03_00:19:53/models/epoch_10.pt",
+    parser.add_argument('--load_checkpoint', type=str, default=None,#"runs/DialogueGenerationVLT5Model_comics_dialogue_generation_2022-06-03_00:19:53/models/epoch_10.pt",
                         help='Path to model checkpoint')
-    parser.add_argument('--batch_size', type=int, default=16,
+    parser.add_argument('--batch_size', type=int, default=4,
                         help='Batch size')
     parser.add_argument('--seed', type=int, default=42, help='Seed to use')
 

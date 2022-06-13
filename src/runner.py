@@ -20,6 +20,7 @@ class Runner:
         device: torch.device,
         optimizer: Optional[torch.optim.Optimizer] = None,
         scheduler: Optional[torch.optim.lr_scheduler.LambdaLR] = None,
+        grad_accumulation_steps: int = 1,
     ) -> None:
         """
         Runner for training and evaluation.
@@ -37,6 +38,7 @@ class Runner:
         self.data_loader = data_loader
         self.device = device
         self.stage = Stage.TRAIN if optimizer is not None else Stage.VAL
+        self.grad_accumulation_steps = grad_accumulation_steps
 
         # if self.stage is Stage.VAL:
         #     self.predictions_info = {}
@@ -58,7 +60,7 @@ class Runner:
         """
         self.model.train(self.stage is Stage.TRAIN)
 
-        for local_batch in tqdm(self.data_loader):
+        for step_i, local_batch in enumerate(tqdm(self.data_loader)):
             batch = local_batch["data"] if "data" in local_batch else local_batch
             outputs = self.model.run(**batch)
             predictions = outputs.prediction.detach().cpu().numpy()
@@ -78,8 +80,10 @@ class Runner:
                         tokenizer = self.model.module.tokenizer
                     else:
                         tokenizer = self.model.tokenizer
-                    predictions_texts = tokenizer.batch_decode(predictions, skip_special_tokens=True)
-                    val = metric.calculate_and_update(target_texts, predictions_texts)
+                    predictions_texts = tokenizer.batch_decode(
+                        predictions, skip_special_tokens=True)
+                    val = metric.calculate_and_update(
+                        target_texts, predictions_texts)
                 else:
                     val = metric.calculate_and_update(targets, predictions)
 
@@ -93,14 +97,20 @@ class Runner:
             #             "prediction": prediction,
             #             "target": target,
             #         }
-            
-            if self.optimizer is not None:
-                self.optimizer.zero_grad()
-                outputs.loss.mean().backward()
-                self.optimizer.step()
 
-                if self.scheduler is not None:
-                    self.scheduler.step()
+            if self.optimizer is not None:
+                b_loss = outputs.loss.mean() / self.grad_accumulation_steps
+                b_loss.backward()
+
+                if (self.grad_accumulation_steps == 1
+                    or step_i > 0 and (step_i % self.grad_accumulation_steps == 0
+                                        or step_i == len(self.data_loader) - 1)):
+                    self.optimizer.step()
+
+                    if self.scheduler is not None:
+                        self.scheduler.step()
+
+                    self.optimizer.zero_grad()
 
             self.run_count += 1
 

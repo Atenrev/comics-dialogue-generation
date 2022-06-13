@@ -47,12 +47,12 @@ class DialogueGenerationVLT5Model(VLT5):
             loss = output['loss']
             output['loss'] = loss
 
-        # output["prediction"] = torch.argmax(output.logits, dim=2)
-        output["prediction"] = self.generate(
-            input_ids=input_ids,
-            vis_inputs=(vis_feats, vis_pos, img_order_ids, obj_order_ids),
-            num_beams=1,
-            max_length=30,
-        )
+        output["prediction"] = torch.argmax(output.logits, dim=2)
+        # output["prediction"] = self.generate(
+        #     input_ids=input_ids,
+        #     vis_inputs=(vis_feats, vis_pos, img_order_ids, obj_order_ids),
+        #     num_beams=1,
+        #     max_length=30,
+        # )
 
         return output

@@ -6,6 +6,6 @@ optimizer:
   type: "adamw"
   warmup_ratio: 0.05
   weight_decay: 0.01
-  gradient_accumulation_steps: 1
+  gradient_accumulation_steps: 4
   adam_eps: 0.000001
   lr: 0.00001
