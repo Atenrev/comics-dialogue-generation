@@ -33,8 +33,8 @@ class DialogueGenerationVLT5Model(VLT5):
         obj_order_ids = torch.arange(V_L, dtype=torch.long, device=device)
         obj_order_ids = obj_order_ids.view(1, 1, V_L).expand(
             B, 4, -1).contiguous().view(B, 4*V_L)
-        
-        output = self.forward(
+
+        output = super().forward(
             input_ids=input_ids,
             vis_inputs=(vis_feats, vis_pos, img_order_ids, obj_order_ids),
             labels=lm_labels,
@@ -43,16 +43,16 @@ class DialogueGenerationVLT5Model(VLT5):
 
         if "target" in kwargs:
             B, L = lm_labels.size()
-
             loss = output['loss']
             output['loss'] = loss
 
-        output["prediction"] = torch.argmax(output.logits, dim=2)
-        # output["prediction"] = self.generate(
-        #     input_ids=input_ids,
-        #     vis_inputs=(vis_feats, vis_pos, img_order_ids, obj_order_ids),
-        #     num_beams=1,
-        #     max_length=30,
-        # )
+        # output["prediction"] = torch.argmax(output.logits, dim=2)
+        output["prediction"] = self.generate(
+            input_ids=input_ids,
+            vis_inputs=(vis_feats, vis_pos, img_order_ids, obj_order_ids),
+            do_sample=True,
+            temperature=0.6,
+            top_p=0.9,
+        )
 
         return output

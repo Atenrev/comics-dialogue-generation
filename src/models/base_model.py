@@ -24,4 +24,10 @@ class BaseModel(torch.nn.Module):
 
     @abstractmethod
     def run(self) -> BaseModelOutput:
+        """
+        Runs one iteration of the model for training or validation.
+
+        Returns:
+            The output of the model.
+        """
         raise NotImplementedError

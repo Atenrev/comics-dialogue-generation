@@ -1,5 +1,4 @@
-import nltk
-import sacrebleu
+import evaluate
 import numpy as np
 
 from typing import Any, List
@@ -52,22 +51,15 @@ class BLEUMetric(Metric):
     inpyt_type: str = "str"
 
     def __init__(self):
-        self.targets = [[]]
-        self.predictions = []
-
-    @property
-    def average(self) -> float:
-        assert len(self.predictions) == len(self.targets[0]), (len(self.predictions), len(self.targets[0]))
-        assert len(self.targets) == 1
-        return sacrebleu.corpus_bleu(self.predictions, self.targets).score
+        super().__init__()
+        self.metric = evaluate.load("google_bleu")
     
-    def calculate_and_update(self, targets: List[List[str]], predictions: List[str]) -> float:
-        self.predictions.extend(predictions)
-        self.targets[0].extend(targets)
-        # batch_len = len(targets)
-        bleu = sacrebleu.corpus_bleu(predictions, [targets])
-        # self.update(bleu.score, batch_len)
-        return bleu.score
+    def calculate_and_update(self, targets: List[str], predictions: List[str]) -> float:
+        batch_len = len(targets)
+        bleu = self.metric.compute(predictions=predictions, references=targets)
+        bleu = bleu["google_bleu"]
+        self.update(bleu, batch_len)
+        return bleu
 
 
 class METEORMetric(Metric):
@@ -75,21 +67,14 @@ class METEORMetric(Metric):
     inpyt_type: str = "str"
 
     def __init__(self):
-        self.targets = [[]]
-        self.predictions = []
+        super().__init__()
+        self.metric = evaluate.load("meteor")
 
-    @property
-    def average(self) -> float:
-        assert len(self.predictions) == len(self.targets[0]), (len(self.predictions), len(self.targets[0]))
-        assert len(self.targets) == 1
-        return nltk.translate.meteor_score.meteor_score(self.targets, self.predictions)
-    
-    def calculate_and_update(self, targets: List[List[str]], predictions: List[str]) -> float:
-        self.predictions.extend(predictions)
-        self.targets[0].extend(targets)
-        # batch_len = len(targets)
-        meteor = nltk.translate.meteor_score.meteor_score([targets], predictions)
-        # self.update(meteor, batch_len)
+    def calculate_and_update(self, targets: List[str], predictions: List[str]) -> float:
+        batch_len = len(targets)
+        meteor = self.metric.compute(predictions=predictions, references=targets)
+        meteor = meteor["meteor"]
+        self.update(meteor, batch_len)
         return meteor
 
 

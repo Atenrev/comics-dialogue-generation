@@ -34,7 +34,7 @@ class TextClozeImageTextVLT5Model(VLT5):
         obj_order_ids = obj_order_ids.view(1, 1, V_L).expand(
             B, 4, -1).contiguous().view(B, 4*V_L)
 
-        output = self.forward(
+        output = self(
             input_ids=input_ids,
             vis_inputs=(vis_feats, vis_pos, img_order_ids, obj_order_ids),
             labels=lm_labels,

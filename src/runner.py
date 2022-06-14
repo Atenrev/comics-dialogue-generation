@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 
 from typing import Any, Optional
 from tqdm import tqdm
@@ -62,7 +61,8 @@ class Runner:
 
         for step_i, local_batch in enumerate(tqdm(self.data_loader)):
             batch = local_batch["data"] if "data" in local_batch else local_batch
-            outputs = self.model.run(**batch)
+            model = self.model.module if isinstance(self.model, torch.nn.DataParallel) else self.model
+            outputs = model.run(**batch)
             predictions = outputs.prediction.detach().cpu().numpy()
             targets = batch["target"].detach().cpu().numpy()
             loss = outputs.loss.detach().cpu().mean().numpy()
@@ -76,10 +76,7 @@ class Runner:
             for metric in self.metrics:
                 if metric.inpyt_type == "str":
                     target_texts = batch["target_text"]
-                    if isinstance(self.model, torch.nn.DataParallel):
-                        tokenizer = self.model.module.tokenizer
-                    else:
-                        tokenizer = self.model.tokenizer
+                    tokenizer = model.tokenizer
                     predictions_texts = tokenizer.batch_decode(
                         predictions, skip_special_tokens=True)
                     val = metric.calculate_and_update(

@@ -4,3 +4,7 @@ report_path: "./reports/"
 
 optimizer:
   type: "adafactor" 
+  scale_parameter: True
+  relative_step: True
+  warmup_init: True
+  clip_threshold: True

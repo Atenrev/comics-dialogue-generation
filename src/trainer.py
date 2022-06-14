@@ -65,22 +65,22 @@ class Trainer:
         if config.type == "adam":
             optimizer = torch.optim.Adam(
                 self.model.parameters(),
-                lr=config.params.lr,
-                betas=(config.params.beta, 0.999)
+                lr=config.lr,
+                betas=(config.beta, 0.999)
             )
         elif config.type == "sgd":
             optimizer = torch.optim.SGD(
                 self.model.parameters(),
-                lr=config.params.lr
+                lr=config.lr
             )
         elif config.type == "adafactor":
             optimizer = Adafactor(
                 self.model.parameters(),
-                scale_parameter=True,
-                relative_step=True,
-                warmup_init=True,
-                clip_threshold=1.0,
-                lr=None
+                scale_parameter=config.scale_parameter,
+                relative_step=config.relative_step,
+                warmup_init=config.warmup_init,
+                clip_threshold=config.clip_threshold,
+                lr=config.lr if "lr" in config else None,
             )
         elif config.type == "adamw":
             from transformers.optimization import AdamW, get_linear_schedule_with_warmup
