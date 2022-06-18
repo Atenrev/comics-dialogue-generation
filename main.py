@@ -27,7 +27,7 @@ def parse_args() -> argparse.Namespace:
                         help='Execution mode ("training", "eval" or "inference")')
     parser.add_argument('--load_checkpoint', type=str, default="runs/DialogueGenerationVLT5Model_comics_dialogue_generation_2022-06-03_00:19:53/models/epoch_10.pt",
                         help='Path to model checkpoint')
-    parser.add_argument('--batch_size', type=int, default=4,
+    parser.add_argument('--batch_size', type=int, default=1,
                         help='Batch size')
     parser.add_argument('--seed', type=int, default=42, help='Seed to use')
 
@@ -104,12 +104,7 @@ def main(args: argparse.Namespace) -> None:
             logging.error("The checkpoint could not be loaded.")
             print(e)
             return
-
-        # checkpoint["model_state_dict"] = {
-        #     (k.replace("module.", "") if k.startswith("module.") else k): v
-        #     for k, v in checkpoint["model_state_dict"].items()
-        # }
-        # model.load_state_dict(checkpoint["model_state_dict"], strict=False)
+            
         model.load_checkpoint(checkpoint["model_state_dict"])
 
     if torch.cuda.device_count() > 1:

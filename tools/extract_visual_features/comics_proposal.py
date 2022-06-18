@@ -81,6 +81,8 @@ class ComicsRawImagesDataset(Dataset):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--batchsize', default=1, type=int, help='batch_size')
+    parser.add_argument('--dataset_path', type=str,
+                        default='datasets/data',)
     parser.add_argument('--out_dir', type=str,
                         default='datasets/COMICS/frcnn_features',)
 
@@ -90,7 +92,7 @@ if __name__ == "__main__":
     if not out_dir.exists():
         out_dir.mkdir()
 
-    dataset_path = "datasets/data"
+    dataset_path = args.dataset_path
     image_paths = glob.glob(os.path.join(
         dataset_path, "**/*.jpg"), recursive=True)
     ocr_file = pd.read_csv(os.path.join(

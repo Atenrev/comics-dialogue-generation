@@ -6,6 +6,7 @@ import cv2
 import os
 import pandas as pd
 import h5py as h5
+import evaluate
 
 from matplotlib import pyplot as plt
 
@@ -23,11 +24,11 @@ GENERATED_COLOR = (0.0, 0.0, 0.0)
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='Plotting sample script')
+    parser = argparse.ArgumentParser(description='Plotting script')
 
     parser.add_argument('--model', type=str, default="text_cloze_image_text_vlt5",
                         help='Model to run')
-    parser.add_argument('--load_cloze_checkpoint', type=str, default="runs/24-TextClozeImageTextVLT5Model_text_cloze_image_text_vlt5_e575d6da/models/epoch_10.pt",
+    parser.add_argument('--load_cloze_checkpoint', type=str, default="runs/24-TextClozeImageTextVLT5Model_text_cloze_image_text_vlt5_hard/models/epoch_10.pt",
                         help='Path to text cloze model checkpoint')
     parser.add_argument('--load_dialogue_checkpoint', type=str, default="runs/DialogueGenerationVLT5Model_comics_dialogue_generation_2022-06-03_00:19:53/models/epoch_10.pt",
                         help='Path to dialogue model checkpoint')
@@ -35,13 +36,17 @@ def parse_arguments():
                         help='Dataset config to use')
     parser.add_argument('--dataset_dir', type=str, default="datasets/COMICS/",
                         help='Dataset directory path')
-    parser.add_argument('--sample_id', type=int, default=7,
+    parser.add_argument('--output_dir', type=str, default="plots/",
+                        help='Output directory path')
+    parser.add_argument('--sample_id', type=int, default=23,
                         help='Sample id to plot')
+    parser.add_argument('--seed', type=int, default=4,
+                        help='Random seed')
 
     return parser.parse_args()
 
 
-def load_datasets(dataset_text_cloze_config, dataset_dialogue_config, dataset_dir, tokenizer, device):
+def load_datasets(dataset_text_cloze_config, dataset_dir, tokenizer, device):
     df = pd.read_csv(
         f"{dataset_dir}/text_cloze_test_{dataset_text_cloze_config.mode}.csv", delimiter=',')
     df = df.fillna("")
@@ -52,9 +57,7 @@ def load_datasets(dataset_text_cloze_config, dataset_dialogue_config, dataset_di
 
     dataset_text_cloze = TextClozeImageTextVLT5Dataset(
         df, feats_h5, tokenizer, device, dataset_text_cloze_config)
-    dataset_dialogue = ComicsDialogueGenerationDataset(
-        df, feats_h5, tokenizer, device, dataset_dialogue_config)
-    return df, dataset_text_cloze, dataset_dialogue
+    return df, dataset_text_cloze
 
 
 def load_checkpoint(checkpoint_path, model):
@@ -65,6 +68,8 @@ def load_checkpoint(checkpoint_path, model):
 
 
 def main(args) -> None:
+    torch.manual_seed(args.seed)
+
     device = torch.device(
         "cuda") if torch.cuda.is_available() else torch.device("cpu")
 
@@ -90,38 +95,26 @@ def main(args) -> None:
     model_dialogue.tokenizer = tokenizer
 
     # Load dataset
-    dataset_text_cloze_config = get_dataset_configuration(args.dataset_config)
-    dataset_dialogue_config = get_dataset_configuration(
-        "comics_dialogue_generation_easy")
-    df, dataset_text_cloze, dataset_dialogue = load_datasets(
-        dataset_text_cloze_config, dataset_dialogue_config, args.dataset_dir, tokenizer, device)
+    dataset_config = get_dataset_configuration(args.dataset_config)
+    df, dataset, = load_datasets(
+        dataset_config, args.dataset_dir, tokenizer, device)
 
     sample = df.iloc[args.sample_id]
     book_id = sample["book_id"]
     page_id = sample["page_id"]
+    target_text = sample[f"answer_candidate_{sample['correct_answer']}_text"]
 
     # Run models
-    sample_text_cloze = dataset_text_cloze[args.sample_id]
-    for key in sample_text_cloze.keys():
-        if isinstance(sample_text_cloze[key], torch.Tensor):
-            sample_text_cloze[key] = sample_text_cloze[key].unsqueeze(0).to(device)
-    prediction_text_cloze = model_text_cloze.run(**sample_text_cloze)
-    prediction_text_cloze = prediction_text_cloze.prediction.detach().cpu()
-    prediction_text_cloze = int(tokenizer.decode(
-        prediction_text_cloze, skip_special_tokens=True))
+    sample_data = dataset[args.sample_id]
+    for key in sample_data.keys():
+        if isinstance(sample_data[key], torch.Tensor):
+            sample_data[key] = sample_data[key].unsqueeze(0).to(device)
 
-    sample_dialogue = dataset_dialogue[args.sample_id]
-    for key in sample_dialogue.keys():
-        if isinstance(sample_dialogue[key], torch.Tensor):
-            sample_dialogue[key] = sample_dialogue[key].unsqueeze(0).to(device)
-
-    input_ids = sample_dialogue['input_ids'].to(device)
+    input_ids = sample_data['input_ids'].to(device)
     B = len(input_ids)
-    V_L = sample_dialogue['vis_feats'].size(2)
-    vis_feats = sample_dialogue['vis_feats'].to(device).view(B, 4*V_L, 2048)
-    vis_pos = sample_dialogue['boxes'].to(device).view(B, 4*V_L, 4)
-
-    lm_labels = sample_dialogue["target"].to(device)
+    V_L = sample_data['vis_feats'].size(2)
+    vis_feats = sample_data['vis_feats'].to(device).view(B, 4*V_L, 2048)
+    vis_pos = sample_data['boxes'].to(device).view(B, 4*V_L, 4)
 
     img_order_ids = [0] * V_L + [1] * V_L + [2] * V_L + [3] * V_L
     img_order_ids = torch.tensor(
@@ -132,13 +125,14 @@ def main(args) -> None:
     obj_order_ids = obj_order_ids.view(1, 1, V_L).expand(
         B, 4, -1).contiguous().view(B, 4*V_L)
 
-    # prediction_dialogue = model_dialogue.generate(**sample_dialogue)
-    # prediction_dialogue = model_dialogue.generate(
-    #     input_ids=input_ids,
-    #     vis_inputs=(vis_feats, vis_pos, img_order_ids, obj_order_ids),
-    #     num_beams=1,
-    #     max_length=30,
-    # )
+    prediction_text_cloze = model_text_cloze.generate(
+        input_ids=input_ids,
+        vis_inputs=(vis_feats, vis_pos, img_order_ids, obj_order_ids),
+    )
+    prediction_text_cloze = tokenizer.batch_decode(
+        prediction_text_cloze, skip_special_tokens=True)[0]
+    prediction_text_cloze = int(prediction_text_cloze) if prediction_text_cloze.isdigit() else 0
+
     prediction_dialogue = model_dialogue.generate(
         input_ids=input_ids,
         vis_inputs=(vis_feats, vis_pos, img_order_ids, obj_order_ids),
@@ -146,12 +140,19 @@ def main(args) -> None:
         temperature=0.6,
         top_p=0.9,
     )
-
     prediction_dialogue = tokenizer.batch_decode(
         prediction_dialogue, skip_special_tokens=True)[0]
 
+    # Calculate metrics
+    m_bleu = evaluate.load("google_bleu")
+    bleu_score = m_bleu.compute(predictions=[prediction_dialogue], references=[target_text])
+    bleu_score = bleu_score["google_bleu"] * 100
+    m_meteor = evaluate.load("meteor")
+    meteor_score = m_meteor.compute(predictions=[prediction_dialogue], references=[target_text])
+    meteor_score = meteor_score["meteor"] * 100
+
     # Plot sample
-    fig = plt.figure(figsize=(18, 9))
+    fig = plt.figure(figsize=(16, 8))
 
     # setting values to rows and column variables
     rows = 2
@@ -215,7 +216,7 @@ def main(args) -> None:
         content = sample[f"answer_candidate_{i-1}_text"]
         plt.title(f"Candidate {i}")
         txt = plt.text(0.5, 0.5, content, fontsize=14, wrap=True,
-                       ha="center", va="center", color=color, bbox=bb)
+                       ha="center", va="top", color=color, bbox=bb)
         txt._get_wrap_line_width = lambda: 300.
         plt.axis('off')
 
@@ -225,12 +226,13 @@ def main(args) -> None:
     # showing text
     plt.title("Generated dialogue")
     txt = plt.text(0.5, 0.5, prediction_dialogue, fontsize=14, wrap=True,
-                   ha="center", va="center", color=GENERATED_COLOR)
+                   ha="center", va="top", color=GENERATED_COLOR)
     txt._get_wrap_line_width = lambda: 300.
     plt.axis('off')
 
-    # save the figure
-    plt.savefig('sample_plot.png')
+    # save the figure with the name of the sample and difficulty and metrics rounded to 2 decimal places
+    os.makedirs(args.output_dir, exist_ok=True)
+    plt.savefig(f'{args.output_dir}/{args.dataset_config.split("_")[-1]}_{args.sample_id}_bleu-{round(bleu_score, 2)}_meteor-{round(meteor_score, 2)}.png')
 
 
 if __name__ == "__main__":

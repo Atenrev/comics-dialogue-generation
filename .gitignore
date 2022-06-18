@@ -102,6 +102,7 @@ ENV/
 
 # other
 .vscode
+
 pretrained_weights/
 /reports/
 data/
@@ -110,8 +111,10 @@ comics.slurm
 /dataset/
 /datasets/
 /models/
-runs/
+/runs/
+/plots/
 environment.yml
 experiments.json
 eval_report.txt
+
 *.png
