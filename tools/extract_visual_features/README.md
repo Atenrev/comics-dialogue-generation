@@ -11,7 +11,7 @@ We use the feature extractor which outputs 36 boxes per image and store them in 
 
 Please follow [the original installation guide](https://github.com/airsplay/py-bottom-up-attention#installation).
 
-*We strongly recommend that you create a new Conde environment for this task.*
+*We strongly recommend that you create a new Conda environment for this task.*
 
 
 ### 2. Download the panel images
