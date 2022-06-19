@@ -7,7 +7,7 @@
 
 
 ## Project Description
-The purpose of this project is to generate subsequent dialogues given a multimodal context. To do this, we used the database provided in [COMICS](https://github.com/miyyer/comics). First, we trained a text-only and a multimodal model to perform a \textit{Text cloze} task. Then, we trained another based on the previous one for generating dialogues.
+The purpose of this project is to generate subsequent dialogues given a multimodal context. To do this, we used the database provided in [COMICS](https://github.com/miyyer/comics). First, we trained a text-only and a multimodal model to perform a Text cloze task. Then, we trained another based on the previous one for generating dialogues.
 
 
 ## Getting Started
