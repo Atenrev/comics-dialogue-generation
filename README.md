@@ -134,13 +134,4 @@ To evaluate the model, change the ```--mode``` to "eval".
 
 
 ## Reference
-If you would like to cite our thesis, use this reference:
-```bibtex
-@mastersthesis{smasip2022comicsgen,
-  author       = {Sergi Masip Cabeza}, 
-  title        = {Automatic generation of comic dialogues},
-  school       = {Universitat Autònoma de Barcelona},
-  type         = {Bachelor's thesis},
-  year         = 2022,
-}
-```
+Thesis not published yet.
