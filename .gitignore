@@ -118,3 +118,4 @@ experiments.json
 eval_report.txt
 
 *.png
+!assets/*.png
