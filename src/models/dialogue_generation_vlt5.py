@@ -53,6 +53,7 @@ class DialogueGenerationVLT5Model(VLT5):
             do_sample=True,
             temperature=0.6,
             top_p=0.9,
+            max_length=60,
         )
 
         return output

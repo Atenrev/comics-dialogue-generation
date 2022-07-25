@@ -4,6 +4,7 @@ report_path: "./reports/"
 
 optimizer:
   type: "adafactor" 
+  gradient_accumulation_steps: 1
   scale_parameter: True
   relative_step: True
   warmup_init: True

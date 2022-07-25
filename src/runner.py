@@ -65,7 +65,7 @@ class Runner:
             outputs = model.run(**batch)
             predictions = outputs.prediction.detach().cpu().numpy()
             targets = batch["target"].detach().cpu().numpy()
-            loss = outputs.loss.detach().cpu().mean().numpy()
+            loss = outputs["loss"].detach().cpu().mean().numpy()
 
             # Compute Batch Metrics
             self.loss_metric.update(loss)
@@ -96,7 +96,7 @@ class Runner:
             #         }
 
             if self.optimizer is not None:
-                b_loss = outputs.loss.mean() / self.grad_accumulation_steps
+                b_loss = outputs["loss"].mean() / self.grad_accumulation_steps
                 b_loss.backward()
 
                 if (self.grad_accumulation_steps == 1
