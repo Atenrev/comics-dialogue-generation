@@ -279,7 +279,7 @@ if __name__ == '__main__':
     comics_fc7 = h5.File('data/vgg_features.h5')
 
     for difficulty in ['easy', 'hard']:
-        for fold in ['train', ]: # 'dev', 'test'
+        for fold in ['dev', 'test']: # 'train', 
 
             print difficulty, fold
 

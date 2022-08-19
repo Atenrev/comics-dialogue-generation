@@ -27,7 +27,7 @@ text box word mask [words_mask] (h_wmask): n x max_panels x max_boxes x max_word
 
 class Create_hdf5:
 
-    def __init__(self, panels_path, ocr_file, ad_path, dims, max_panels, max_boxes, max_words, max_vocab_size, h5path):
+    def __init__(self, panels_path, ocr_file, ad_path, dims, max_panels, max_boxes, max_words, h5path):
 
         self.panels_path = panels_path
         # self.images_path = images_path
@@ -45,7 +45,6 @@ class Create_hdf5:
         self.max_panels = max_panels
         self.max_boxes = max_boxes
         self.max_words = max_words
-        self.max_vocab_size = max_vocab_size
         self.dump_vocabulary('./data/comics_vocab.p')
         
     def dump_vocabulary(self, vocab_path): # helper which dumps vocabulary in pickle
@@ -58,13 +57,12 @@ class Create_hdf5:
         self.ocr_dict = defaultdict(list)
         self.vcount = Counter()
         self.read_ocr_file()
-        print 'done creating ocr dict, now filtering vocab of size %d' % \
-                len(self.vcount)
+        print 'done creating ocr dict' 
 
         # vocab = self.vcount.most_common(self.max_vocab_size)
-        self.vdict = dict(self.vcount) # {}
-        # for i, (w, count) in enumerate(vocab):
-        #     self.vdict[w] = i
+        self.vdict = {}
+        for i, (w, _) in enumerate(self.vcount.items()):
+            self.vdict[w] = i
         self.vdict['UNK'] = len(self.vdict)
         self.rvdict = dict((v,k) for k,v in self.vdict.iteritems())
         print 'done filtering vocab to %d words' % len(self.vdict)
@@ -417,10 +415,9 @@ def main():
     dims = (224, 224) # dimensions of image
     max_panels = 9
     max_boxes = 3
-    max_words = 200
-    max_vocab_size = 20000
+    max_words = 500
     c = Create_hdf5(panels_path, ocr_file, ad_path, dims,
-            max_panels, max_boxes, max_words, max_vocab_size, h5path) 
+            max_panels, max_boxes, max_words, h5path) 
 
     c.create_img_hdf5()
 
