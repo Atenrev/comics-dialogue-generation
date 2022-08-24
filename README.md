@@ -134,9 +134,11 @@ To evaluate the model, change the ```--mode``` to "eval".
 
 
 ## Reference
+```
 @mastersthesis{ddd.uab.cat:264189,
       author = {Masip Cabeza, Sergi and Valveny Llobet, Ernest, dir.},
        title = {Generació automàtica de diàlegs de còmic},
         year = {2022},
          url = {https://ddd.uab.cat/record/264189},
 }
+```
