@@ -1,7 +1,7 @@
 # Automatic generation of comic dialogues
 * Author: [Sergi Masip Cabeza](https://sergimasip.com)
 * Thesis director: [Ernest Valveny Llobet]()
-* Developed as a bachelor's thesis at [Universitat Autònoma de Barcelona](https://www.uab.cat). Check the [thesis](https://ddd.uab.cat/pub/tfg/2021/tfg_132310/1533031_informe_final.pdf) for more information (catalan).
+* Developed as a bachelor's thesis at [Universitat Autònoma de Barcelona](https://www.uab.cat). Check the [thesis](https://ddd.uab.cat/pub/tfg/2021/tfg_132310/1533031_informe_final.pdf) for more information (in Catalan).
 
 ![teaser image](./assets/example.png)
 
